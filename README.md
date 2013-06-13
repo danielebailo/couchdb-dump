@@ -4,10 +4,14 @@ Couchdb-dump (& restore)
 It works on LINUX/UNIX, Bash based systems (MacOSx)
 
 **Bash command line script(s) to EASILY dump&restore a couchdb database and/or to restore it.**
-
-
  
 NB: Dumped database is outputted in the stdout (screen)
+
+
+##Quickstart (& quickend)
+`Dump`: ***bash coucdb-dump mycouch.com my-db > dumped-db.txt***
+`Restore`: ***bash coucdb-dump mycouch.com my-db dumpedDB.txt***
+
 
 ## Why do you need it?
 Surprisingly there is not a straightforward way to dump a couchdb database. Often you are suggested to replicate it or to dump it with the couchdb `_all_docs` directive. 
@@ -39,7 +43,7 @@ Just write in the command line:
 
 **Saving output to file**
 
-*bash coucdb-dump mycouch.com my-db > dumped-db.txt*
+***bash coucdb-dump mycouch.com my-db > dumped-db.txt***
 
 
 ## RESTORE usage
@@ -64,7 +68,7 @@ Just write in the command line:
   
 ### Example
 
-*bash coucdb-dump mycouch.com my-db dumpedDB.txt*
+***bash coucdb-dump mycouch.com my-db dumpedDB.txt***
 
 
 
