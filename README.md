@@ -33,7 +33,7 @@ Just write in the command line:
   `DB_NAME`: name of the database, e.g. 'my-db'
 
 
-### Examples
+### Example
 
 *bash coucdb-dump mycouch.com my-db*
 
@@ -59,6 +59,12 @@ Just write in the command line:
   `DB_NAME`: name of the database, e.g. 'my-db'
   
   `DUMPED_DB_FILENAME...` : file containing the JSON object with all the docs
+  
+  
+  
+### Example
+
+*bash coucdb-dump mycouch.com my-db dumpedDB.txt*
 
 
 
