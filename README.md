@@ -1,4 +1,4 @@
-couchdb-dump
+couchdb-dump (& restore)
 ============
 
 **Bash command line script(s) to EASILY dump&restore a couchdb database and/or to restore it.**
