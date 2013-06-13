@@ -5,10 +5,7 @@ It works on LINUX/UNIX, Bash based systems (MacOSx)
 
 **Bash command line script(s) to EASILY dump&restore a couchdb database and/or to restore it.**
 
-When launched it takes as arguments:
 
-* url of database (without http://)
-* database name
  
 NB: Dumped database is outputted in the stdout (screen)
 
@@ -21,6 +18,11 @@ Hence, the goal of this script(s) is to give you a simple way to download & uplo
 
 
 ## DUMP Usage
+
+When launched it takes as arguments:
+
+* url of database (without http://)
+* database name
 
 Just write in the command line:
 
@@ -40,6 +42,23 @@ Just write in the command line:
 *bash coucdb-dump mycouch.com my-db > dumped-db.txt*
 
 
-## Restoring the database
+## RESTORE usage
+
+When launched it takes as arguments:
+
+* url of database (without http://)
+* database name
+* file containing dumped database
+
+Just write in the command line:
+
+***bash couchdb-dump URL... DB_NAME... DUMPED_DB_FILENAME...***
+
+  `DB_URL`: the url of the couchdb instance without 'http://', e.g. mycouch.com
+  
+  `DB_NAME`: name of the database, e.g. 'my-db'
+  
+  `DUMPED_DB_FILENAME...` : file containing the JSON object with all the docs
+
 
 
