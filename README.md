@@ -1,4 +1,4 @@
-couchdb-dump (& restore)
+Couchdb-dump (& restore)
 ============
 
 It works on LINUX/UNIX, Bash based systems (MacOSx)
