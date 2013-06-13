@@ -10,6 +10,7 @@ NB: Dumped database is outputted in the stdout (screen)
 
 ##Quickstart (& quickend)
 `Dump`: ***bash coucdb-dump mycouch.com my-db > dumped-db.txt***
+
 `Restore`: ***bash coucdb-dump mycouch.com my-db dumpedDB.txt***
 
 
