@@ -68,3 +68,6 @@ Just write in the command line:
 
 
 
+## TODO
+Add -p option to use an arbitrary port (5984 is the default one)
+
