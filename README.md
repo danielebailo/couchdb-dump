@@ -1,4 +1,4 @@
 couchdb-dump
 ============
 
-Bbash command line scripts to dump a couchdb database and/or to restore it.
+Bash command line script(s) to dump a couchdb database and/or to restore it.
