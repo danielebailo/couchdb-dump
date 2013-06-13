@@ -24,7 +24,7 @@ Hence, the goal of this script(s) is to give you a simple way to download & uplo
 
 Just write in the command line:
 
-*bash couchdb-dump DB_URL... DB_NAME...*
+***bash couchdb-dump DB_URL... DB_NAME...***
 
   `DB_URL`: the url of the couchdb instance without 'http://', e.g. mycouch.com
   
