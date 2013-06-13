@@ -4,14 +4,15 @@ Couchdb-dump (& restore)
 It works on LINUX/UNIX, Bash based systems (MacOSx)
 
 **Bash command line script(s) to EASILY dump&restore a couchdb database and/or to restore it.**
- 
-NB: Dumped database is outputted in the stdout (screen)
+
+ * Needs bash
+ * Dumped database is outputted in the stdout (screen)
 
 
 ##Quickstart (& quickend)
-`Dump`: ***bash coucdb-dump mycouch.com my-db > dumped-db.txt***
+`Dump`: ***bash coucdb-dump.sh mycouch.com my-db > dumped-db.txt***
 
-`Restore`: ***bash coucdb-dump mycouch.com my-db dumpedDB.txt***
+`Restore`: ***bash coucdb-dump.s mycouch.com my-db dumpedDB.txt***
 
 
 ## Why do you need it?
@@ -40,11 +41,11 @@ Just write in the command line:
 
 ### Example
 
-*bash coucdb-dump mycouch.com my-db*
+*bash coucdb-dump.sh mycouch.com my-db*
 
 **Saving output to file**
 
-***bash coucdb-dump mycouch.com my-db > dumped-db.txt***
+***bash coucdb-dump.sh mycouch.com my-db > dumped-db.txt***
 
 
 ## RESTORE usage
@@ -57,7 +58,7 @@ When launched it takes as arguments:
 
 Just write in the command line:
 
-***bash couchdb-dump URL... DB_NAME... DUMPED_DB_FILENAME...***
+***bash couchdb-restore.sh URL... DB_NAME... DUMPED_DB_FILENAME...***
 
   `DB_URL`: the url of the couchdb instance without 'http://', e.g. mycouch.com
   
@@ -69,7 +70,7 @@ Just write in the command line:
   
 ### Example
 
-***bash coucdb-dump mycouch.com my-db dumpedDB.txt***
+***bash coucdb-restore.sh mycouch.com my-db dumpedDB.txt***
 
 
 
