@@ -12,7 +12,7 @@ It works on LINUX/UNIX, Bash based systems (MacOSx)
 ##Quickstart (& quickend)
 `Dump`: ***bash coucdb-dump.sh mycouch.com my-db > dumped-db.txt***
 
-`Restore`: ***bash coucdb-dump.s mycouch.com my-db dumpedDB.txt***
+`Restore`: ***bash coucdb-restore.sh mycouch.com my-db dumped-db.txt***
 
 
 ## Why do you need it?
