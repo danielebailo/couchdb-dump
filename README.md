@@ -10,13 +10,13 @@ It works on LINUX/UNIX, Bash based systems (MacOSx)
 
 
 ##Quickstart (& quickend)
-`Dump`: ***bash coucdb-dump.sh mycouch.com my-db > dumped-db.txt***
+`Dump`: ***bash couchdb-dump.sh mycouch.com my-db > dumped-db.txt***
 
-`Restore`: ***bash coucdb-restore.sh mycouch.com my-db dumped-db.txt***
+`Restore`: ***bash couchdb-restore.sh mycouch.com my-db dumped-db.txt***
 
 
 ## Why do you need it?
-Surprisingly there is not a straightforward way to dump a couchdb database. Often you are suggested to replicate it or to dump it with the couchdb `_all_docs` directive. 
+Surprisingly there is not a straightforward way to dump a couchdb database. Often you are suggested to replicate it or to dump it with the couchdb `_all_docs` directive.
 
 **But using `_all_docs` directive you have as output a JSON object which cannot be used to directly re-upload the database to couchdb**.
 
@@ -35,17 +35,17 @@ Just write in the command line:
 ***bash couchdb-dump DB_URL... DB_NAME...***
 
   `DB_URL`: the url of the couchdb instance without 'http://', e.g. mycouch.com
-  
+
   `DB_NAME`: name of the database, e.g. 'my-db'
 
 
 ### Example
 
-*bash coucdb-dump.sh mycouch.com my-db*
+*bash couchdb-dump.sh mycouch.com my-db*
 
 **Saving output to file**
 
-***bash coucdb-dump.sh mycouch.com my-db > dumped-db.txt***
+***bash couchdb-dump.sh mycouch.com my-db > dumped-db.txt***
 
 
 ## RESTORE usage
@@ -63,17 +63,16 @@ Just write in the command line:
   `DB_URL`: the url of the couchdb instance without 'http://', e.g. mycouch.com
   
   `DB_NAME`: name of the database, e.g. 'my-db'
-  
+
   `DUMPED_DB_FILENAME...` : file containing the JSON object with all the docs
-  
-  
-  
+
+
+
 ### Example
 
-***bash coucdb-restore.sh mycouch.com my-db dumpedDB.txt***
+***bash couchdb-restore.sh mycouch.com my-db dumpedDB.txt***
 
 
 
 ## TODO
 Add -p option to use an arbitrary port (5984 is the default one)
-
