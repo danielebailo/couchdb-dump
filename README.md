@@ -53,6 +53,7 @@ Just write in the command line:
 When launched it takes as arguments:
 
 * url of database (without http://)
+  NB: if log-in is enabled the url is like  user:pass@my-url.com
 * database name
 * file containing dumped database
 
@@ -70,7 +71,7 @@ Just write in the command line:
   
 ### Example
 
-***bash coucdb-restore.sh mycouch.com my-db dumpedDB.txt***
+***bash coucdb-restore.sh user:pass@mycouch.com my-db dumpedDB.txt***
 
 
 
