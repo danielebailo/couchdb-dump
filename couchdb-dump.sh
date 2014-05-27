@@ -28,11 +28,6 @@ function helpMsg {
     echo ""
 
 	}
-##thanks to Carlos Justiniano for this function (https://gist.github.com/cjus)
-function jsonval {
-    temp=`echo $json | sed 's/\\\\\//\//g' | sed 's/[{}]//g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | sed 's/\"\:\"/\|/g' | sed 's/[\,]/ /g' | sed 's/\"//g' | grep -w $prop`
-    echo ${temp##*|}
-}
 
 ## END HELPERS
 
@@ -53,20 +48,27 @@ fi
 ## VARS
 url=$1
 db_name=$2
-prop='doc' 
+#prop='doc'  NOT USED
 
 
 
 ##vars for the loop
 i=0
-outJSON=""
 while read json
 do
     if [ $i -eq 0 ]; then
         echo "{\"docs\":["
-    else
-        picurl=`jsonval`
-        echo "$json"
+        echo "" >>provino.txt
+        echo "" >>out.txt
+    else    
+        rm provino.txt out.txt
+        echo "${json:0:-1}" >> provino.txt
+        #echo "${json}" >> provino.txt
+        #cat provino.txt | sed  's/{\"id\":.*,\"key\".*,\"value\":.*,\"doc\"://' | sed 's/},$/,/' >>out.txt
+        # last 'sed' needs explanations: it is added for the last line (with no trailing comma, but just brackets)
+        cat provino.txt | sed  's/{\"id\":.*,\"key\".*,\"value\":.*,\"doc\"://' | sed 's/},$/,/' | sed 's/}$//' >>out.txt
+        cat out.txt
     fi
     let "i += 1" 
 done < <(echo "`curl -X GET http://$url:5984/$db_name/_all_docs?include_docs=true`")
+echo "}"
