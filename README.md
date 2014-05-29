@@ -10,9 +10,9 @@ It works on LINUX/UNIX, Bash based systems (MacOSx)
 
 
 ##Quickstart (& quickend)
-`Dump`: ***bash coucdb-dump.sh mycouch.com my-db > dumped-db.txt***
+`Dump`: ***bash couchdb-dump.sh mycouch.com my-db > dumped-db.txt***
 
-`Restore`: ***bash coucdb-restore.sh mycouch.com my-db dumped-db.txt***
+`Restore`: ***bash couchdb-restore.sh mycouch.com my-db dumped-db.txt***
 
 
 ## Why do you need it?
@@ -41,11 +41,11 @@ Just write in the command line:
 
 ### Example
 
-*bash coucdb-dump.sh mycouch.com my-db*
+*bash couchdb-dump.sh mycouch.com my-db*
 
 **Saving output to file**
 
-***bash coucdb-dump.sh mycouch.com my-db > dumped-db.txt***
+***bash couchdb-dump.sh mycouch.com my-db > dumped-db.txt***
 
 
 ## RESTORE usage
@@ -71,7 +71,7 @@ Just write in the command line:
   
 ### Example
 
-***bash coucdb-restore.sh user:pass@mycouch.com my-db dumpedDB.txt***
+***bash couchdb-restore.sh user:pass@mycouch.com my-db dumpedDB.txt***
 
 
 
