@@ -27,7 +27,7 @@
 ##START: HELPERS FUNCTIONS
 function helpMsg {
 	echo "** usage: bash couchdb-restore DB_URL... DB_NAME... DUMPED_DB_FILENAME..."
-	echo "**  example: bash coucdb-restore.sh mycouch.com my-db dumpedDB.txt"
+	echo "**  example: bash couchdb-restore.sh mycouch.com my-db dumpedDB.txt"
     echo "**  DB_URL: the url of the couchdb instance without 'http://', e.g. mycouch.com"
     echo "**  DB_NAME: name of the database, e.g. 'my-db'"
     echo "**  DUMPED_DB_FILENAME... : file containing the JSON object with all the docs, e.g. dumpedDB.txt"

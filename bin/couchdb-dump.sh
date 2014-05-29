@@ -25,13 +25,12 @@
 ##START: HELPERS FUNCTIONS
 function helpMsg {
 	echo "** usage: bash couchdb-dump DB_URL... DB_NAME..."
-	echo "**  example: bash coucdb-dump mycouch.com my-db"
+	echo "**  example: bash couchdb-dump mycouch.com my-db"
     echo "**  DB_URL: the url of the couchdb instance without 'http://', e.g. mycouch.com"
     echo "**  DB_NAME: name of the database, e.g. 'my-db'"
     echo ""
 
 	}
-
 ## END HELPERS
 
 
