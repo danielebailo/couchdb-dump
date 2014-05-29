@@ -1,4 +1,9 @@
 #!/bin/bash
+##
+#    AUTHOR: DANIELE BAILO
+#    https://github.com/danielebailo
+#    www.danielebailo.it
+##
 
 ## this script restore a couchdb database-file to a couchdb database instance
 ## FILE should be:

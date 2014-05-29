@@ -1,6 +1,9 @@
 #!/bin/bash
-
-
+##
+#    AUTHOR: DANIELE BAILO
+#    https://github.com/danielebailo
+#    www.danielebailo.it
+##
 
 ## this script outputs the content of a couchdb database on the stdoutput
 ## in a format that can be later uploaded with the bulk docs directive
