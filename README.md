@@ -14,6 +14,10 @@ It works on LINUX/UNIX, Bash based systems (MacOSx)
 
 `Restore`: ***bash couchdb-restore.sh mycouch.com my-db dumped-db.txt***
 
+##Quickstart (& quickend) with user & pass
+`Dump`: ***bash couchdb-dump.sh user:pass@mycouch.com my-db > dumped-db.txt***
+
+`Restore`: ***bash couchdb-restore.sh user:pass@mycouch.com my-db dumped-db.txt***
 
 ## Why do you need it?
 Surprisingly there is not a straightforward way to dump a couchdb database. Often you are suggested to replicate it or to dump it with the couchdb `_all_docs` directive. 
