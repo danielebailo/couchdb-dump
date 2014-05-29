@@ -64,10 +64,9 @@ do
         echo "" >>out.txt
     else    
         rm provino.txt out.txt
-        echo "${json:0:-1}" >> provino.txt
-        #echo "${json}" >> provino.txt
-        #cat provino.txt | sed  's/{\"id\":.*,\"key\".*,\"value\":.*,\"doc\"://' | sed 's/},$/,/' >>out.txt
-        # last 'sed' needs explanations: it is added for the last line (with no trailing comma, but just brackets)
+        echo $json | sed s'/.$//'>> provino.txt
+
+        # last 'sed' in next line needs explanations: it is added for the last line (with no trailing comma, but just brackets)
         cat provino.txt | sed  's/{\"id\":.*,\"key\".*,\"value\":.*,\"doc\"://' | sed 's/},$/,/' | sed 's/}$//' >>out.txt
         cat out.txt
     fi
