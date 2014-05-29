@@ -12,7 +12,7 @@
 
 
 ## USAGE
-## ** example: bash coucdb-restore mycouch.com my-db dumpedDB.txt**
+## ** example: bash couchdb-restore mycouch.com my-db dumpedDB.txt**
 # syntax: bash couchdb-dump URL... DB_NAME... DUMPED_DB_FILENAME...
 ## DB_URL: the url of the couchdb instance without 'http://', e.g. mycouch.com
 ## DB_NAME: name of the database, e.g. 'my-db
@@ -53,8 +53,6 @@ fi
 url=$1
 db_name=$2
 file_name=$3
-
-
 
 
 curl -d @$file_name -X POST http://$url:5984/$db_name/_bulk_docs -H 'Content-Type: application/json'

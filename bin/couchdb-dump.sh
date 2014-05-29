@@ -24,8 +24,8 @@
 
 ##START: HELPERS FUNCTIONS
 function helpMsg {
-	echo "** usage: bash couchdb-dump DB_URL... DB_NAME..."
-	echo "**  example: bash couchdb-dump mycouch.com my-db"
+	echo "** usage: bash couchdb-dump.sh DB_URL... DB_NAME..."
+	echo "**  example: bash couchdb-dump.sh mycouch.com my-db"
     echo "**  DB_URL: the url of the couchdb instance without 'http://', e.g. mycouch.com"
     echo "**  DB_NAME: name of the database, e.g. 'my-db'"
     echo ""
@@ -73,3 +73,4 @@ do
     let "i += 1" 
 done < <(echo "`curl -X GET http://$url:5984/$db_name/_all_docs?include_docs=true`")
 echo "}"
+rm provino.txt out.txt
