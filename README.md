@@ -6,7 +6,7 @@ It works on LINUX/UNIX, Bash based systems (MacOSx)
 **Bash command line script(s) to EASILY dump&restore a couchdb database**
 
  * Needs bash
- * Dumped database is outputted in the stdout (screen)
+ * Dumped database is outputted into stdout (screen)
 
 
 ##Quickstart (& quickend)
