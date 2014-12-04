@@ -56,8 +56,9 @@ db_name=$2
 
 ##vars for the loop
 i=0
-while read json
+while read -r json
 do
+	##echo $json
     if [ $i -eq 0 ]; then
         echo "{\"docs\":["
         echo "" >>provino.txt
