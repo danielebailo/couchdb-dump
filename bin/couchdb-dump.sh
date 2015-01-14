@@ -28,6 +28,7 @@ function helpMsg {
 	echo "**  example: bash couchdb-dump.sh mycouch.com my-db"
     echo "**  DB_URL: the url of the couchdb instance without 'http://', e.g. mycouch.com"
     echo "**  DB_NAME: name of the database, e.g. 'my-db'"
+    echo "**  FILE_NAME: Filename for output (else it gets written to stdout)"
     echo ""
 
 	}
@@ -35,12 +36,12 @@ function helpMsg {
 
 
 ##NO ARGS
-if [ $# -lt 2 ]; then
+if [ $# -lt 3 ]; then
 	echo ":::::::::::::::::::::::::::::::::::::::::"
      echo 1>&2 "** $0: not enough arguments"
      helpMsg
      exit 2
-elif [ $# -gt 2 ]; then
+elif [ $# -gt 3 ]; then
 	echo ""
      echo 1>&2 "$0: too many arguments"
      helpMsg
@@ -51,27 +52,60 @@ fi
 url=$1
 db_name=$2
 #prop='doc'  NOT USED
+file_name=$3
 
+if [ ! "x${file_name}" = "x" ]&&[ -f ${file_name} ]; then
+	echo "Output file ${file_name} already exists. Not overwritting. Exiting."
+	exit 1
+fi
 
+curl -X GET http://$url:5984/$db_name/_all_docs?include_docs=true -o ${file_name}
+if [ ! $? = 0 ]; then
+	echo "An error was encountered whilst dumping the database."
+	rm -f ${file_name} 2>/dev/null
+	exit 1
+fi
 
-##vars for the loop
-i=0
-while read -r json
-do
-	##echo $json
-    if [ $i -eq 0 ]; then
-        echo "{\"docs\":["
-        echo "" >>provino.txt
-        echo "" >>out.txt
-    else    
-        rm provino.txt out.txt
-        echo $json | sed 's/.$//'>> provino.txt ##need the dot to remove the } at the end of the string
+if [ "`file $file | grep -c CRLF`" = "1" ]; then
+	echo "File contains Windows carridge returns- converting..."
+	tr -d '\r' < $file > ${file}.tmp
+	if [ $? = 0 ]; then
+		mv ${file}.tmp ${file}
+		if [ $? = 0 ]; then
+			echo "Completed successfully."
+		else
+			echo "An error occured whilst overwriting the original file."
+			exit 1
+		fi
+	else
+		echo "An error occured when trying to convert."
+		exit 1
+	fi
+fi
+echo "Amending file to make it suitable for Import."
+echo "Stage 1 - Document filtering"
+sed -i 's/.*,"doc"://g' $file_name
+if [ $? = 0 ];then
+	echo "Stage failed."
+	exit 1
+fi
+echo "Stage 2 - Duplicate curly brace removal"
+sed -i 's/}},$/},/g' $file_name
+if [ $? = 0 ];then
+	echo "Stage failed."
+	exit 1
+fi
+echo "Stage 3 - Header Correction"
+sed -i '1s/^.*/{"docs":[/' $file_name
+if [ $? = 0 ];then
+	echo "Stage failed."
+	exit 1
+fi
+echo "Stage 4 - Final document line correction"
+sed -i 's/}}$/}/g' $file_name
+if [ $? = 0 ];then
+	echo "Stage failed."
+	exit 1
+fi
 
-        # last 'sed' in next line needs explanations: it is added for the last line (with no trailing comma, but just brackets)
-        cat provino.txt | sed  's/{\"id\":.*,\"key\".*,\"value\":.*,\"doc\"://' | sed 's/},$/,/' | sed 's/}$//' >>out.txt
-        cat out.txt
-    fi
-    let "i += 1" 
-done < <(echo "`curl -X GET http://$url:5984/$db_name/_all_docs?include_docs=true`")
-echo "}"
-rm provino.txt out.txt
+echo "Export completed successfully. File available at: ${file_name}"
