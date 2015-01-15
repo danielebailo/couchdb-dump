@@ -10,15 +10,17 @@ It works on LINUX/UNIX, Bash based systems (MacOSx)
 
 ##Quickstart (& quickend)
 * Dump:
+
 ```bash couchdb-dump.sh -H 127.0.0.1 -d my-db -f dumpedDB.json -u admin -p password```
 
 * Restore:
+
 ```bash couchdb-restore.sh -H 127.0.0.1 -d my-db -f dumpedDB.json -u admin -p password```
 
 ## Why do you need it?
 Surprisingly, there is not a straightforward way to dump a CouchDB database. Often you are suggested to replicate it or to dump it with the couchdb `_all_docs` directive. 
 
-**But using `_all_docs` directive provides you with JSON which cannot be directly re-import back into CouchDB**.
+**But, using the `_all_docs` directive provides you with JSON which cannot be directly re-import back into CouchDB**.
 
 Hence, the goal of this script(s) is to give you a simple way to Dump & Restore your CouchDB database.
 
