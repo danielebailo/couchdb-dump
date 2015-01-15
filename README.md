@@ -3,82 +3,51 @@ Couchdb-dump (& restore)
 
 It works on LINUX/UNIX, Bash based systems (MacOSx)
 
-**Bash command line script(s) to EASILY dump&restore a couchdb database**
+**Bash command line script(s) to EASILY dump&restore a CouchDB database**
 
  * Needs bash
- * Dumped database is outputted into stdout (screen)
-
+ * Dumped database is output to a file (configurable).
 
 ##Quickstart (& quickend)
-`Dump`: ***bash couchdb-dump.sh mycouch.com my-db > dumped-db.txt***
+`Dump`:
+```bash couchdb-dump.sh -H 127.0.0.1 -d my-db -f dumpedDB.json -u admin -p password```
 
-`Restore`: ***bash couchdb-restore.sh mycouch.com my-db dumped-db.txt***
-
-##Quickstart (& quickend) with user & pass
-`Dump`: ***bash couchdb-dump.sh user:pass@mycouch.com my-db > dumped-db.txt***
-
-`Restore`: ***bash couchdb-restore.sh user:pass@mycouch.com my-db dumped-db.txt***
+`Restore`:
+```bash couchdb-restore.sh -H 127.0.0.1 -d my-db -f dumpedDB.json -u admin -p password```
 
 ## Why do you need it?
-Surprisingly there is not a straightforward way to dump a couchdb database. Often you are suggested to replicate it or to dump it with the couchdb `_all_docs` directive. 
+Surprisingly, there is not a straightforward way to dump a CouchDB database. Often you are suggested to replicate it or to dump it with the couchdb `_all_docs` directive. 
 
-**But using `_all_docs` directive you have as output a JSON object which cannot be used to directly re-upload the database to couchdb**.
+**But using `_all_docs` directive provides you with JSON which cannot be directly re-import back into CouchDB**.
 
-Hence, the goal of this script(s) is to give you a simple way to download & upload your couchdb database.
+Hence, the goal of this script(s) is to give you a simple way to Dump & Restore your CouchDB database.
 
 
 ## DUMP Usage
+```
+Usage: ./couchdb-dump.sh -H <COUCHDB_HOST> -d <DB_NAME> -f <OUTPUT_FILE> [-u <username>] [-p <password>] [-P <port>]
+	-h   Display usage information.
+	-H   CouchDB URL. Can be provided with or without 'http://'
+	-d   CouchDB Database name to dump.
+	-f   File to write Database to.
+	-P   Provide a port number for CouchDB [Default: 5984]
+	-u   Provide a username for auth against CouchDB [Default: blank]
+	-p   Provide a password for auth against CouchDB [Default: blank]
 
-When launched it takes as arguments:
-
-* url of database (without http://)
-* database name
-
-Just write in the command line:
-
-***bash couchdb-dump DB_URL... DB_NAME...***
-
-  `DB_URL`: the url of the couchdb instance without 'http://', e.g. mycouch.com
-  
-  `DB_NAME`: name of the database, e.g. 'my-db'
-
-
-### Example
-
-*bash couchdb-dump.sh mycouch.com my-db*
-
-**Saving output to file**
-
-***bash couchdb-dump.sh mycouch.com my-db > dumped-db.txt***
-
+Example: ./couchdb-dump.sh ./couchdb-dump.sh -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password
+```
 
 ## RESTORE usage
+```
+Usage: ./couchdb-restore.sh -H <COUCHDB_HOST> -d <DB_NAME> -f <INPUT_FILE> [-u <username>] [-p <password>] [-P <port>] [-l <lines_per_batch>]
+	-h   Display usage information.
+	-H   CouchDB URL. Can be provided with or without 'http://'
+	-d   CouchDB Database name to import to.
+	-f   File containing json to import.
+	-l   Number of lines to process at a time. [Default: 5000]
+	-P   Provide a port number for CouchDB [Default: 5984]
+	-u   Provide a username for auth against CouchDB [Default: blank]
+	-p   Provide a password for auth against CouchDB [Default: blank]
 
-When launched it takes as arguments:
-
-* url of database (without http://)
-  NB: if log-in is enabled the url is like  user:pass@my-url.com
-* database name
-* file containing dumped database
-
-Just write in the command line:
-
-***bash couchdb-restore.sh URL... DB_NAME... DUMPED_DB_FILENAME...***
-
-  `DB_URL`: the url of the couchdb instance without 'http://', e.g. mycouch.com
-  
-  `DB_NAME`: name of the database, e.g. 'my-db'
-  
-  `DUMPED_DB_FILENAME...` : file containing the JSON object with all the docs
-  
-  
-  
-### Example
-
-***bash couchdb-restore.sh user:pass@mycouch.com my-db dumpedDB.txt***
-
-
-
-## TODO
-Add -p option to use an arbitrary port (5984 is the default one)
-
+Example: ./couchdb-restore.sh -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password
+```
