@@ -9,10 +9,10 @@ It works on LINUX/UNIX, Bash based systems (MacOSx)
  * Dumped database is output to a file (configurable).
 
 ##Quickstart (& quickend)
-`Dump`:
+* Dump:
 ```bash couchdb-dump.sh -H 127.0.0.1 -d my-db -f dumpedDB.json -u admin -p password```
 
-`Restore`:
+* Restore:
 ```bash couchdb-restore.sh -H 127.0.0.1 -d my-db -f dumpedDB.json -u admin -p password```
 
 ## Why do you need it?
