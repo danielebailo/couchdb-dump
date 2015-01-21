@@ -133,52 +133,61 @@ fi
 
 #### VALIDATION END
 
+## Stop bash mangling wildcard... 
+set -o noglob
 # Manage Design Documents as a priority, and remove them from the main import job
 echo "... INFO: Separating Design documents"
 # Find all _design docs, put them into another file
-grep '^{"_id":"_design' ${file_name} > ${file_name}.design
-# Remove these design docs from the main file.
-sed -i '/^{"_id":"_design/d' ${file_name}
+design_file_name=${file_name}.design
+grep '^{"_id":"_design' ${file_name} > ${design_file_name}
 
 # Count the design file (if it even exists)
-DESIGNS="`wc -l ${file_name}.design 2>/dev/null | awk '{print$1}'`"
+DESIGNS="`wc -l ${design_file_name} 2>/dev/null | awk '{print$1}'`"
 # If design docs were found for import...
 if [ ! "x$DESIGNS" = "x" ]; then 
+    # Duplicate the original DB file, so we don't mangle the user's input file:
+    cp -f ${file_name}{,-nodesign}
+    # Re-set file_name to be our new file.
+    file_name=${file_name}-nodesign
+    # Remove these design docs from (our new) main file.
+    sed -i '/^{"_id":"_design/d' ${file_name}
+
     echo "... INFO: Inserting Design documents"
     designcount=1
     # For each design doc...
-    while read -r; do
+    while IFS= read -r; do
         line=$REPLY
         # Split the ID out for use as the import URL path
         URLPATH=$(echo $line | awk -F'"' '{print$4}')
         # Scrap the ID and Rev from the main data, as well as any trailing ','
-        echo $line | sed -re "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | sed -e 's/,$//' > ${file_name}.design.${designcount}
+        echo $line | sed -re "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | sed -e 's/,$//' > ${design_file_name}.${designcount}
         # Insert this file into the DB
-        curl -d @${file_name}.design.${designcount} -X PUT "${url}/${db_name}/${URLPATH}" -H 'Content-Type: application/json' -o ${file_name}.design.out.${designcount}
+        curl -d @${design_file_name}.${designcount} -X PUT "${url}/${db_name}/${URLPATH}" -H 'Content-Type: application/json' -o ${design_file_name}.out.${designcount}
         # If curl threw an error:
         if [ ! $? = 0 ]; then
-             echo "... ERROR: Curl failed trying to restore ${file_name}.${design}.${designcount} - Stopping"
+             echo "... ERROR: Curl failed trying to restore ${design_file_name}.${designcount} - Stopping"
              exit 1
         # If curl was happy, but CouchDB returned an error in the return JSON:
-        elif [ "`head -n 1 ${file_name}.design.out.${designcount} | grep -c '^{"error'`" = 1 ]; then
-             echo "... ERROR: CouchDB Reported: `head -n 1 ${file_name}.design.out.${designcount}`"
+        elif [ "`head -n 1 ${design_file_name}.out.${designcount} | grep -c '^{"error'`" = 1 ]; then
+             echo "... ERROR: CouchDB Reported: `head -n 1 ${design_file_name}.out.${designcount}`"
              exit 1
         # Otherwise, if everything went well, delete our temp files.
         else
-             rm -f ${file_name}.design.out.${designcount}
-             rm -f ${file_name}.design.${designcount}
+             rm -f ${design_file_name}.out.${designcount}
+             rm -f ${design_file_name}.${designcount}
         fi
         # Increase design count - mainly used for the INFO at the end.
         (( designcount++ ))
     # NOTE: This is where we insert the design lines exported from the main block
-    done < <(cat ${file_name}.design)
+    done < <(cat ${design_file_name})
     echo "... INFO: Successfully imported ${designcount} Design Documents"
 # If there were no design docs found for import:
 else
     # Cleanup any null files
-    rm -f ${file_name}.design 2>/dev/null
+    rm -f ${design_file_name} 2>/dev/null
     echo "... INFO: No Design Documents found for import."
 fi
+set +o noglob
 
 # If the size of the file to import is less than our $lines size, don't worry about splitting
 if [ `wc -l $file_name | awk '{print$1}'` -lt $lines ]; then
