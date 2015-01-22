@@ -145,30 +145,54 @@ grep '^{"_id":"_design' ${file_name} > ${design_file_name}
 DESIGNS="`wc -l ${design_file_name} 2>/dev/null | awk '{print$1}'`"
 # If design docs were found for import...
 if [ ! "x$DESIGNS" = "x" ]; then 
+    echo "... INFO: Duplicating original file for alteration"
     # Duplicate the original DB file, so we don't mangle the user's input file:
     cp -f ${file_name}{,-nodesign}
     # Re-set file_name to be our new file.
     file_name=${file_name}-nodesign
     # Remove these design docs from (our new) main file.
+    echo "... INFO: Stripping _design elements from regular documents"
     sed -i '/^{"_id":"_design/d' ${file_name}
+    # Remove the final document's trailing comma
+    echo "... INFO: Fixing end document"
+    line=$(expr `wc -l ${file_name} | awk '{print$1}'` - 1)
+    sed -i "${line}s/,$//" ${file_name}
 
     echo "... INFO: Inserting Design documents"
-    designcount=1
+    designcount=0
     # For each design doc...
-    while IFS= read -r; do
-        line=$REPLY
+    while IFS="" read -r; do
+        line="${REPLY}"
         # Split the ID out for use as the import URL path
         URLPATH=$(echo $line | awk -F'"' '{print$4}')
         # Scrap the ID and Rev from the main data, as well as any trailing ','
-        echo $line | sed -re "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | sed -e 's/,$//' > ${design_file_name}.${designcount}
+        echo "${line}" | sed -re "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | sed -e 's/,$//' > ${design_file_name}.${designcount}
+        # Fix Windows CRLF
+        if [ "`file ${design_file_name}.${designcount} | grep -c CRLF`" = "1" ]; then
+            echo "... INFO: File contains Windows carridge returns- converting..."
+            tr -d '\r' < ${design_file_name}.${designcount} > ${design_file_name}.${designcount}.tmp
+            if [ $? = 0 ]; then
+                mv ${design_file_name}.${designcount}.tmp ${design_file_name}.${designcount}
+                if [ $? = 0 ]; then
+                    echo "... INFO: Completed successfully."
+                else
+                    echo "... ERROR: Failed to overwrite ${design_file_name}.${designcount} with ${design_file_name}.${designcount}.tmp"
+                    exit 1
+                fi
+            else
+                echo ".. ERROR: Failed to convert file."
+                exit 1
+            fi
+        fi
+
         # Insert this file into the DB
-        curl -d @${design_file_name}.${designcount} -X PUT "${url}/${db_name}/${URLPATH}" -H 'Content-Type: application/json' -o ${design_file_name}.out.${designcount}
+        curl -T ${design_file_name}.${designcount} -X PUT "${url}/${db_name}/${URLPATH}" -H 'Content-Type: application/json' -o ${design_file_name}.out.${designcount}
         # If curl threw an error:
         if [ ! $? = 0 ]; then
              echo "... ERROR: Curl failed trying to restore ${design_file_name}.${designcount} - Stopping"
              exit 1
         # If curl was happy, but CouchDB returned an error in the return JSON:
-        elif [ "`head -n 1 ${design_file_name}.out.${designcount} | grep -c '^{"error'`" = 1 ]; then
+        elif [ ! "`head -n 1 ${design_file_name}.out.${designcount} | grep -c 'error'`" = 0 ]; then
              echo "... ERROR: CouchDB Reported: `head -n 1 ${design_file_name}.out.${designcount}`"
              exit 1
         # Otherwise, if everything went well, delete our temp files.
@@ -192,7 +216,7 @@ set +o noglob
 # If the size of the file to import is less than our $lines size, don't worry about splitting
 if [ `wc -l $file_name | awk '{print$1}'` -lt $lines ]; then
     echo "... INFO: Small dataset. Importing as a single file."
-    curl -d @$file_name -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json'
+    curl -T $file_name -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json'
 # Otherwise, it's a large import that requires bulk insertion.
 else
     echo "... INFO: Block import set to ${lines} lines."
@@ -231,11 +255,11 @@ else
                 echo "... INFO: Footer already applied to ${PADNAME}"
             fi
             echo "... INFO: Inserting ${PADNAME}"
-            curl -d @${PADNAME} -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
+            curl -T ${PADNAME} -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
             if [ ! $? = 0 ]; then
                 echo "... ERROR: Curl failed trying to restore ${PADNAME} - Stopping"
                 exit 1
-            elif [ "`head -n 1 tmp.out | grep -c '^{"error'`" = 1 ]; then
+            elif [ ! "`head -n 1 tmp.out | grep -c 'error'`" = 0 ]; then
                 echo "... ERROR: CouchDB Reported: `head -n 1 tmp.out`"
                 exit 1
             else

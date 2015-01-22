@@ -173,7 +173,7 @@ if [ ! $? = 0 ];then
     exit 1
 fi
 echo "... INFO: Stage 3 - Header Correction"
-sed -i '1s/^.*/{"docs":[/' $file_name
+sed -i '1s/^.*/{"new_edits":false,"docs":[/' $file_name
 if [ ! $? = 0 ];then
     echo "Stage failed."
     exit 1
