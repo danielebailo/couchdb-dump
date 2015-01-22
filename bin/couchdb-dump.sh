@@ -4,7 +4,7 @@
 #    https://github.com/danielebailo
 #    www.danielebailo.it
 #
-#    Contributers:
+#    Contributors:
 #     * dalgibbard - http://github.com/dalgibbard
 #     * epos-eu    - http://github.com/epos-eu
 ##
@@ -16,6 +16,7 @@
 ## ** example: ./couchdb-dump.sh -H 127.0.0.1 -d mydb -u admin -p password -f mydb.json
 
 ###################### CODE STARTS HERE ###################
+scriptversionnumber="0.9.1"
 
 ##START: FUNCTIONS
 usage(){
@@ -33,6 +34,17 @@ usage(){
     echo
     exit 1
 }
+
+scriptversion(){
+	echo
+    echo -e "\t** couchdb-dump version: $scriptversionnumber **"
+    echo
+    echo -e "\t Authors:"
+    echo -e "\t Daniele Bailo  (bailo.daniele@gmail.com)"
+    echo -e "\t Darren Gibbard (dalgibbard@gmail.com)"
+    echo
+    exit 1
+}
 ## END FUNCTIONS
 
 # Catch no args:
@@ -46,7 +58,7 @@ password=""
 port=5984
 OPTIND=1
 
-while getopts ":h?H:d:f:u:p:P:" opt; do
+while getopts ":h?H:d:f:u:p:P:V?" opt; do
     case "$opt" in
         h) usage;;
         H) url="$OPTARG" ;;
@@ -55,6 +67,7 @@ while getopts ":h?H:d:f:u:p:P:" opt; do
         u) username="$OPTARG";;
         p) password="$OPTARG";;
         P) port="${OPTARG}";;
+        V) scriptversion;;        
         :) echo "... ERROR: Option \"-${OPTARG}\" requires an argument"; usage ;;
         *|\?) echo "... ERROR: Unknown Option \"-${OPTARG}\""; usage;;
     esac
