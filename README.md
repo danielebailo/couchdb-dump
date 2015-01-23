@@ -53,7 +53,7 @@ Usage: ./couchdb-dump.sh -H <COUCHDB_HOST> -d <DB_NAME> -f <OUTPUT_FILE> [-u <us
 	-V   Display version information.
 	-h   Display usage information.
 
-Example: ./couchdb-dump.sh ./couchdb-dump.sh -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password
+Example: ./couchdb-dump.sh -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password
 ```
 
 ## RESTORE usage

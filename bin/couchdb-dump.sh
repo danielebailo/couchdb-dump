@@ -31,7 +31,7 @@ usage(){
     echo -e "\t-V   Display version information."
     echo -e "\t-h   Display usage information."
     echo
-    echo "Example: $0 ./couchdb-dump.sh -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password"
+    echo "Example: $0 -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password"
     echo
     exit 1
 }
