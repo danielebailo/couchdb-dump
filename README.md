@@ -44,13 +44,14 @@ This is a known limitation, and is discussed in #2
 ## DUMP Usage
 ```
 Usage: ./couchdb-dump.sh -H <COUCHDB_HOST> -d <DB_NAME> -f <OUTPUT_FILE> [-u <username>] [-p <password>] [-P <port>]
-	-h   Display usage information.
 	-H   CouchDB URL. Can be provided with or without 'http://'
 	-d   CouchDB Database name to dump.
 	-f   File to write Database to.
 	-P   Provide a port number for CouchDB [Default: 5984]
 	-u   Provide a username for auth against CouchDB [Default: blank]
 	-p   Provide a password for auth against CouchDB [Default: blank]
+	-V   Display version information.
+	-h   Display usage information.
 
 Example: ./couchdb-dump.sh ./couchdb-dump.sh -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password
 ```
@@ -58,7 +59,6 @@ Example: ./couchdb-dump.sh ./couchdb-dump.sh -H 127.0.0.1 -d mydb -f dumpedDB.js
 ## RESTORE usage
 ```
 Usage: ./couchdb-restore.sh -H <COUCHDB_HOST> -d <DB_NAME> -f <INPUT_FILE> [-u <username>] [-p <password>] [-P <port>] [-l <lines_per_batch>]
-	-h   Display usage information.
 	-H   CouchDB URL. Can be provided with or without 'http://'
 	-d   CouchDB Database name to import to.
 	-f   File containing json to import.
@@ -66,6 +66,8 @@ Usage: ./couchdb-restore.sh -H <COUCHDB_HOST> -d <DB_NAME> -f <INPUT_FILE> [-u <
 	-P   Provide a port number for CouchDB [Default: 5984]
 	-u   Provide a username for auth against CouchDB [Default: blank]
 	-p   Provide a password for auth against CouchDB [Default: blank]
+	-V   Display version information.
+	-h   Display usage information.
 
 Example: ./couchdb-restore.sh -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password
 ```

@@ -18,12 +18,12 @@
 ## ** example: ./couchdb-restore.sh -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password
 
 ###################### CODE STARTS HERE ###################
+scriptversionnumber="0.9.2"
 
 ##START: FUNCTIONS
 usage() {
     echo
     echo "Usage: $0 -H <COUCHDB_HOST> -d <DB_NAME> -f <INPUT_FILE> [-u <username>] [-p <password>] [-P <port>] [-l <lines_per_batch>]"
-    echo -e "\t-h   Display usage information."
     echo -e "\t-H   CouchDB URL. Can be provided with or without 'http://'"
     echo -e "\t-d   CouchDB Database name to import to."
     echo -e "\t-f   File containing json to import."
@@ -31,8 +31,23 @@ usage() {
     echo -e "\t-P   Provide a port number for CouchDB [Default: 5984]"
     echo -e "\t-u   Provide a username for auth against CouchDB [Default: blank]"
     echo -e "\t-p   Provide a password for auth against CouchDB [Default: blank]"
+    echo -e "\t-V   Display version information."
+    echo -e "\t-h   Display usage information."
     echo
     echo "Example: $0 -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password"
+    echo
+    exit 1
+}
+
+scriptversion(){
+    echo
+    echo -e "\t** couchdb-restore version: $scriptversionnumber **"
+    echo
+    echo -e "\t URL:\thttps://github.com/danielebailo/couchdb-dump"
+    echo
+    echo -e "\t Authors:"
+    echo -e "\t Daniele Bailo  (bailo.daniele@gmail.com)"
+    echo -e "\t Darren Gibbard (dalgibbard@gmail.com)"
     echo
     exit 1
 }
@@ -50,7 +65,7 @@ port=5984
 lines=5000
 OPTIND=1
 
-while getopts ":h?H:d:f:l:u:p:P:" opt; do
+while getopts ":h?H:d:f:l:u:p:P:V?" opt; do
     case "$opt" in
         h) usage;;
         H) url="$OPTARG" ;;
@@ -60,6 +75,7 @@ while getopts ":h?H:d:f:l:u:p:P:" opt; do
         u) username="$OPTARG";;
         p) password="$OPTARG";;
         P) port="${OPTARG}";;
+        V) scriptversion;;
         :) echo "... ERROR: Option \"-${OPTARG}\" requires an argument"; usage ;;
         *|\?) echo "... ERROR: Unknown Option \"-${OPTARG}\""; usage;;
     esac
