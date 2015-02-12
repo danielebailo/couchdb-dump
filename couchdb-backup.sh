@@ -99,8 +99,6 @@ restore=false
 port=5984
 OPTIND=1
 lines=5000
-# Set default parser threads to number of CPUs, minus 1.
-threaddef=$(expr `grep -c ^processor /proc/cpuinfo` - 1)
 
 while getopts ":h?H:d:f:u:p:P:l:V?b?B?r?R?" opt; do
     case "$opt" in
@@ -156,15 +154,16 @@ if [ "x$file_name" = "x" ]; then
 fi
 
 # Validate thread count
+cores=`nproc`
 if [ ! "x$threads" = "x" ]; then
-    if [ $threads -gt `expr $threaddef + 1` ]; then
-        echo "... WARN: Thread setting of $threads is more than CPU count. Setting to `expr $threaddef + 1`"
-        threads=`expr $threaddef + 1`
+    if [ $threads -gt $cores ]; then
+        echo "... WARN: Thread setting of $threads is more than CPU count. Setting to $cores"
+        threads=$cores
     else
         echo "... INFO: Setting parser threads to $threads"
     fi
 else
-    threads=$threaddef
+    threads=`expr $cores - 1`
 fi
 
 ## Manage the passing of http/https for $url:
