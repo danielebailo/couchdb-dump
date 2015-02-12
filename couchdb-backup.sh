@@ -258,7 +258,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     echo "... INFO: Stage 1 - Document filtering"
 
     # If the input file is larger than 250MB, multi-thread the parsing:
-    if [ `$(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//')` -ge 256000 ]&&[ ! $threads -le 1 ]; then
+    if [ $(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//') -ge 256000 ]&&[ ! $threads -le 1 ]; then
         filesize=$(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//')
         KBreduction=$(($((`wc -l ${file_name} | awk '{print$1}'` * 80)) / 1024))
         filesize=`expr $filesize + $(expr $filesize - $KBreduction)`
@@ -292,6 +292,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
             PADNUM=`printf "%06d" $NUM`
             PADNAME="${file_name}.thread${PADNUM}"
             cat ${PADNAME} >> ${file_name}.tmp
+            rm -f ${PADNAME}
             (( NUM++ ))
         done
         if [ `wc -l ${file_name}` = `wc -l ${file_name}.tmp` ]; then
