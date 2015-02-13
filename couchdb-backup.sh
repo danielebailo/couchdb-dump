@@ -272,7 +272,8 @@ if [ $backup = true ]&&[ $restore = false ]; then
         fi
 
         ### SPLIT INTO THREADS
-        split --numeric-suffixes --suffix-length=6 -n l/${threads} ${file_name} ${file_name}.thread
+        split_cal=$(( $((`wc -l ${file_name} | awk '{print$1}'` / $threads)) + $threads ))
+        split --numeric-suffixes --suffix-length=6 -l ${split_cal} ${file_name} ${file_name}.thread
         if [ ! "$?" = "0" ]; then
             echo "... ERROR: Unable to create split files."
             exit 1
@@ -294,7 +295,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
             rm -f ${PADNAME}
             (( NUM++ ))
         done
-        if [ `wc -l ${file_name}` = `wc -l ${file_name}.tmp` ]; then
+        if [ `wc -l ${file_name} | awk '{print$1}'` = `wc -l ${file_name}.tmp | awk '{print$1}'` ]; then
             mv ${file_name}{.tmp,}
             if [ ! $? = 0 ]; then
                 echo "... ERROR: Failed to overwrite ${file_name}"
