@@ -100,7 +100,7 @@ port=5984
 OPTIND=1
 lines=5000
 
-while getopts ":h?H:d:f:u:p:P:l:V?b?B?r?R?" opt; do
+while getopts ":h?H:d:f:u:p:P:l:t:V?b?B?r?R?" opt; do
     case "$opt" in
         h) usage;;
         b|B) backup=true ;;
