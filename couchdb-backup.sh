@@ -268,7 +268,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         KBreduction=$(($((`wc -l ${file_name} | awk '{print$1}'` * 80)) / 1024))
         filesize=`expr $filesize + $(expr $filesize - $KBreduction)`
         checkdiskspace "${file_name}" $filesize
-        echo "... INFO: Multi-Threading Parsing Enabled."
+        echo "... INFO: Multi-Threaded Parsing Enabled."
         if [ -f ${file_name}.thread000000 ]; then
             echo "... ERROR: Split files \"${file_name}.thread*\" already present. Please remove before continuing."
             exit 1
