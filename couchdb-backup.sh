@@ -152,6 +152,7 @@ if [ "x$file_name" = "x" ]; then
     echo "... ERROR: Missing argument '-f <FILENAME>'"
     usage
 fi
+file_name_orig=$file_name
 
 # Validate thread count
 ## If we're on a Mac, use sysctl
@@ -373,7 +374,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
     # Manage Design Documents as a priority, and remove them from the main import job
     echo "... INFO: Separating Design documents"
     # Find all _design docs, put them into another file
-    design_file_name=${file_name}.design
+    design_file_name=${file_name}-design
     grep '^{"_id":"_design' ${file_name} > ${design_file_name}
 
     # Count the design file (if it even exists)
@@ -458,7 +459,19 @@ elif [ $restore = true ]&&[ $backup = false ]; then
     # If the size of the file to import is less than our $lines size, don't worry about splitting
     if [ `wc -l $file_name | awk '{print$1}'` -lt $lines ]; then
         echo "... INFO: Small dataset. Importing as a single file."
-        curl -T $file_name -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json'
+        curl -T $file_name -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
+        if [ "$?" = "0" ]; then
+            echo "... INFO: Imported ${file_name_orig} Successfully."
+            rm -f tmp.out
+            rm -f ${file_name_orig}-design
+            rm -f ${file_name_orig}-nodesign
+            exit 0
+        else
+            echo "... ERROR: An error was encountered during import:"
+            cat tmp.out
+            rm -f tmp.out
+            exit 1
+        fi
     # Otherwise, it's a large import that requires bulk insertion.
     else
         echo "... INFO: Block import set to ${lines} lines."
@@ -518,6 +531,8 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             else
                 echo "... INFO: Successfully Imported `expr ${NUM} - 1` Files"
                 A=1
+                rm -f ${file_name_orig}-design
+                rm -f ${file_name_orig}-nodesign
             fi
         done
     fi
