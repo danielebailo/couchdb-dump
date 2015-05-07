@@ -20,7 +20,7 @@
 
 
 ###################### CODE STARTS HERE ###################
-scriptversionnumber="1.0.0"
+scriptversionnumber="1.0.1"
 
 ##START: FUNCTIONS
 usage(){
@@ -154,7 +154,13 @@ if [ "x$file_name" = "x" ]; then
 fi
 
 # Validate thread count
-cores=`nproc`
+## If we're on a Mac, use sysctl
+if [ ! "`uname -a | grep -ci darwin`" = "0" ]; then
+    cores=`sysctl -n hw.ncpu`
+## Otherwise, go with nproc
+else
+    cores=`nproc`
+fi
 if [ ! "x$threads" = "x" ]; then
     if [ $threads -gt $cores ]; then
         echo "... WARN: Thread setting of $threads is more than CPU count. Setting to $cores"
@@ -235,7 +241,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     # This messes up us trying to sed things at the end of lines!
     if [ "`file $file_name | grep -c CRLF`" = "1" ]; then
         echo "... INFO: File contains Windows carridge returns- converting..."
-        filesize=$(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//')
+        filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
         tr -d '\r' < ${file_name} > ${file_name}.tmp
         if [ $? = 0 ]; then
@@ -257,8 +263,8 @@ if [ $backup = true ]&&[ $restore = false ]; then
     echo "... INFO: Stage 1 - Document filtering"
 
     # If the input file is larger than 250MB, multi-thread the parsing:
-    if [ $(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//') -ge 256000 ]&&[ ! $threads -le 1 ]; then
-        filesize=$(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//')
+    if [ $(du -P -k ${file_name} | awk '{print$1}') -ge 256000 ]&&[ ! $threads -le 1 ]; then
+        filesize=$(du -P -k ${file_name} | awk '{print$1}')
         KBreduction=$(($((`wc -l ${file_name} | awk '{print$1}'` * 80)) / 1024))
         filesize=`expr $filesize + $(expr $filesize - $KBreduction)`
         checkdiskspace "${file_name}" $filesize
@@ -309,7 +315,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     else
         # Estimating 80byte saving per line... probably a little conservative depending on keysize.
         KBreduction=$(($((`wc -l ${file_name} | awk '{print$1}'` * 80)) / 1024))
-        filesize=$(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//')
+        filesize=$(du -P -k ${file_name} | awk '{print$1}')
         filesize=`expr $filesize - $KBreduction`
         checkdiskspace "${file_name}" $filesize
         sed -i 's/.*,"doc"://g' $file_name
@@ -322,7 +328,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     echo "... INFO: Stage 2 - Duplicate curly brace removal"
     # Approx 1Byte per line removed
     KBreduction=$((`wc -l ${file_name} | awk '{print$1}'` / 1024))
-    filesize=$(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//')
+    filesize=$(du -P -k ${file_name} | awk '{print$1}')
     filesize=`expr $filesize - $KBreduction`
     checkdiskspace "${file_name}" $filesize
     sed -i 's/}},$/},/g' $file_name
@@ -331,7 +337,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         exit 1
     fi
     echo "... INFO: Stage 3 - Header Correction"
-    filesize=$(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//')
+    filesize=$(du -P -k ${file_name} | awk '{print$1}')
     checkdiskspace "${file_name}" $filesize
     sed -i '1s/^.*/{"new_edits":false,"docs":[/' $file_name
     if [ ! $? = 0 ];then
@@ -339,7 +345,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         exit 1
     fi
     echo "... INFO: Stage 4 - Final document line correction"
-    filesize=$(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//')
+    filesize=$(du -P -k ${file_name} | awk '{print$1}')
     checkdiskspace "${file_name}" $filesize
     sed -i 's/}}$/}/g' $file_name
     if [ ! $? = 0 ];then
@@ -376,7 +382,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
     if [ ! "x$DESIGNS" = "x" ]; then 
         echo "... INFO: Duplicating original file for alteration"
         # Duplicate the original DB file, so we don't mangle the user's input file:
-        filesize=$(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//')
+        filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
         cp -f ${file_name}{,-nodesign}
         # Re-set file_name to be our new file.
@@ -388,7 +394,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         # Remove the final document's trailing comma
         echo "... INFO: Fixing end document"
         line=$(expr `wc -l ${file_name} | awk '{print$1}'` - 1)
-        filesize=$(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//')
+        filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
         sed -i "${line}s/,$//" ${file_name}
 
@@ -404,7 +410,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             # Fix Windows CRLF
             if [ "`file ${design_file_name}.${designcount} | grep -c CRLF`" = "1" ]; then
                 echo "... INFO: File contains Windows carridge returns- converting..."
-                filesize=$(du -P -BK ${design_file_name}.${designcount} | awk '{print$1}' | sed -e 's/K$//')
+                filesize=$(du -P -k ${design_file_name}.${designcount} | awk '{print$1}')
                 checkdiskspace "${file_name}" $filesize
                 tr -d '\r' < ${design_file_name}.${designcount} > ${design_file_name}.${designcount}.tmp
                 if [ $? = 0 ]; then
@@ -462,7 +468,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         fi
 
         echo "... INFO: Generating files to import"
-        filesize=$(du -P -BK ${file_name} | awk '{print$1}' | sed -e 's/K$//')
+        filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
         ### Split the file into many
         split --numeric-suffixes --suffix-length=6 -l ${lines} ${file_name} ${file_name}.split
@@ -481,7 +487,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             if [ -f ${PADNAME} ]; then
                 if [ ! "`head -n 1 ${PADNAME}`" = "${HEADER}" ]; then
                     echo "... INFO: Adding header to ${PADNAME}"
-                    filesize=$(du -P -BK ${PADNAME} | awk '{print$1}' | sed -e 's/K$//')
+                    filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
                     checkdiskspace "${PADNAME}" $filesize
                     sed -i "1i${HEADER}" ${PADNAME}
                 else
@@ -489,7 +495,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                 fi
                 if [ ! "`tail -n 1 ${PADNAME}`" = "${FOOTER}" ]; then
                     echo "... INFO: Adding footer to ${PADNAME}"
-                    filesize=$(du -P -BK ${PADNAME} | awk '{print$1}' | sed -e 's/K$//')
+                    filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
                     checkdiskspace "${PADNAME}" $filesize
                     sed -i '$s/,$//g' ${PADNAME}
                     echo "${FOOTER}" >> ${PADNAME}
