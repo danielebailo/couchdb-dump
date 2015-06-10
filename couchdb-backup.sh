@@ -555,9 +555,9 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                     echo "... INFO: Footer already applied to ${PADNAME}"
                 fi
                 echo "... INFO: Inserting ${PADNAME}"
-                A=0
+                B=0
                 attemptcount=0
-                until [ $A = 1 ]; do
+                until [ $B = 1 ]; do
                     (( attemptcount++ ))
                     curl -T ${PADNAME} -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
                     if [ ! $? = 0 ]; then
@@ -577,7 +577,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                             sleep 1
                         fi
                     else
-                        A=1
+                        B=1
                         rm -f ${PADNAME}
                         rm -f tmp.out
                     fi
