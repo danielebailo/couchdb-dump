@@ -69,7 +69,7 @@ checkdiskspace(){
     fi
 
     stripdir=${location%/*}
-    KBavail=$(df -P -BK ${stripdir} | tail -n 1 | awk '{print$4}' | sed -e 's/K$//')
+    KBavail=$(df -P -k ${stripdir} | tail -n 1 | awk '{print$4}' | sed -e 's/K$//')
 
     if [ $KBavail -ge $KBrequired ]; then
         return 0
