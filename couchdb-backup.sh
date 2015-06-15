@@ -20,7 +20,7 @@
 
 
 ###################### CODE STARTS HERE ###################
-scriptversionnumber="1.1.0"
+scriptversionnumber="1.1.1"
 
 ##START: FUNCTIONS
 usage(){
