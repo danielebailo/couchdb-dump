@@ -305,7 +305,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         for loop in `seq 1 ${threads}`; do
             PADNUM=`printf "%06d" $NUM`
             PADNAME="${file_name}.thread${PADNUM}"
-            sed -i 's/.*,"doc"://g' ${PADNAME} &
+            sed -i '' 's/.*,"doc"://g' ${PADNAME} &
             (( NUM++ ))
         done
         wait
@@ -334,7 +334,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         filesize=`expr $filesize - $KBreduction`
         checkdiskspace "${file_name}" $filesize
-        sed -i 's/.*,"doc"://g' $file_name
+        sed -i '' 's/.*,"doc"://g' $file_name
         if [ ! $? = 0 ];then
             echo "Stage failed."
             exit 1
@@ -347,7 +347,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
     filesize=`expr $filesize - $KBreduction`
     checkdiskspace "${file_name}" $filesize
-    sed -i 's/}},$/},/g' $file_name
+    sed -i '' 's/}},$/},/g' $file_name
     if [ ! $? = 0 ];then
         echo "Stage failed."
         exit 1
@@ -355,7 +355,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     echo "... INFO: Stage 3 - Header Correction"
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
     checkdiskspace "${file_name}" $filesize
-    sed -i '1s/^.*/{"new_edits":false,"docs":[/' $file_name
+    sed -i '' '1s/^.*/{"new_edits":false,"docs":[/' $file_name
     if [ ! $? = 0 ];then
         echo "Stage failed."
         exit 1
@@ -363,7 +363,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     echo "... INFO: Stage 4 - Final document line correction"
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
     checkdiskspace "${file_name}" $filesize
-    sed -i 's/}}$/}/g' $file_name
+    sed -i '' 's/}}$/}/g' $file_name
     if [ ! $? = 0 ];then
         echo "Stage failed."
         exit 1
@@ -410,13 +410,13 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         # Remove these design docs from (our new) main file.
         echo "... INFO: Stripping _design elements from regular documents"
         checkdiskspace "${file_name}" $filesize
-        sed -i '/^{"_id":"_design/d' ${file_name}
+        sed -i '' '/^{"_id":"_design/d' ${file_name}
         # Remove the final document's trailing comma
         echo "... INFO: Fixing end document"
         line=$(expr `wc -l ${file_name} | awk '{print$1}'` - 1)
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
-        sed -i "${line}s/,$//" ${file_name}
+        sed -i '' "${line}s/,$//" ${file_name}
 
         echo "... INFO: Inserting Design documents"
         designcount=0
@@ -547,7 +547,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                     echo "... INFO: Adding header to ${PADNAME}"
                     filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
                     checkdiskspace "${PADNAME}" $filesize
-                    sed -i "1i${HEADER}" ${PADNAME}
+                    sed -i '' "1i${HEADER}" ${PADNAME}
                 else
                     echo "... INFO: Header already applied to ${PADNAME}"
                 fi
@@ -555,7 +555,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                     echo "... INFO: Adding footer to ${PADNAME}"
                     filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
                     checkdiskspace "${PADNAME}" $filesize
-                    sed -i '$s/,$//g' ${PADNAME}
+                    sed -i '' '$s/,$//g' ${PADNAME}
                     echo "${FOOTER}" >> ${PADNAME}
                 else
                     echo "... INFO: Footer already applied to ${PADNAME}"
