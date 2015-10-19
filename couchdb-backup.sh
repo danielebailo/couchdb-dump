@@ -161,7 +161,10 @@ file_name_orig=$file_name
 ## If we're on a Mac, use sysctl
 if [ ! "`uname -a | grep -ci darwin`" = "0" ]; then
     cores=`sysctl -n hw.ncpu`
-## Otherwise, go with nproc
+## Check if nproc available- set cores=1 if not
+elif ! type nproc >/dev/null; then
+    cores=1
+## Otherwise use nproc
 else
     cores=`nproc`
 fi

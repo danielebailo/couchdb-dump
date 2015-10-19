@@ -55,5 +55,6 @@ When running the export, all of the documents are pulled out in "ID Order"- When
 CouchDB is an append-only database. When you delete records, the metadata is maintained for future reference, and is never fully deleted. All documents also retain a historic revision count.
 With the above points in mind; the export and import does not include Deleted documents, or old revisions; therefore, using this script, you can export and re-import your data, cleansing it of any previously (logically) deleted data!
 
-if you pair this with deletion and re-creation of replication rules (using the 'update_seq' parameter to avoid re-pulling the entire DB/deleted documents from a remote node) you can manually compress and clean out an entire cluster of waste, node-by-node.
+If you pair this with deletion and re-creation of replication rules (using the 'update_seq' parameter to avoid re-pulling the entire DB/deleted documents from a remote node) you can manually compress and clean out an entire cluster of waste, node-by-node.
+Note though; after creating all the rules with a fixed update_seq, once completed to the entire cluster, you will need to destroy and recereate all replication rules without the fixed update_seq - else, when restarting a node etc, replication will restart from the old seq.
 
