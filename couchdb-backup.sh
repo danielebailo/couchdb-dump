@@ -429,7 +429,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             # Split the ID out for use as the import URL path
             URLPATH=$(echo $line | awk -F'"' '{print$4}')
             # Scrap the ID and Rev from the main data, as well as any trailing ','
-            echo "${line}" | sed -re "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | sed -e 's/,$//' > ${design_file_name}.${designcount}
+            echo "${line}" | sed -Ee "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | sed -e 's/,$//' > ${design_file_name}.${designcount}
             # Fix Windows CRLF
             if [ "`file ${design_file_name}.${designcount} | grep -c CRLF`" = "1" ]; then
                 echo "... INFO: File contains Windows carridge returns- converting..."
