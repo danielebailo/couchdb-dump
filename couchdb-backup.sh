@@ -219,6 +219,12 @@ if [ ! "x$username" = "x" ]&&[ ! "x$password" = "x" ]; then
     url="${httptype}//${username}:${password}@${urlbase}"
 fi
 
+# Check for sed option
+if [ "`uname -s`" = "Darwin" ]; then
+    sed_regexp_option='E'
+else
+    sed_regexp_option='r'
+fi
 # Allow for self-signed/invalid certs if method is HTTPS:
 if [ "`echo $url | grep -ic "^https://"`" = "1" ]; then
 	curlopt="-k"
@@ -429,7 +435,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             # Split the ID out for use as the import URL path
             URLPATH=$(echo $line | awk -F'"' '{print$4}')
             # Scrap the ID and Rev from the main data, as well as any trailing ','
-            echo "${line}" | sed -Ee "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | sed -e 's/,$//' > ${design_file_name}.${designcount}
+            echo "${line}" | sed -${sed_regexp_option}e "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | sed -e 's/,$//' > ${design_file_name}.${designcount}
             # Fix Windows CRLF
             if [ "`file ${design_file_name}.${designcount} | grep -c CRLF`" = "1" ]; then
                 echo "... INFO: File contains Windows carridge returns- converting..."
