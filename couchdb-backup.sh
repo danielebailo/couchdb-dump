@@ -157,9 +157,12 @@ if [ "x$file_name" = "x" ]; then
 fi
 file_name_orig=$file_name
 
+# Get OS TYPE (Linux for Linux, Darwin for MacOSX)
+os_type=`uname -s`
+
 # Validate thread count
 ## If we're on a Mac, use sysctl
-if [ ! "`uname -a | grep -ci darwin`" = "0" ]; then
+if [ "$os_type" = "Darwin" ]; then
     cores=`sysctl -n hw.ncpu`
 ## Check if nproc available- set cores=1 if not
 elif ! type nproc >/dev/null; then
@@ -220,7 +223,7 @@ if [ ! "x$username" = "x" ]&&[ ! "x$password" = "x" ]; then
 fi
 
 # Check for sed option
-if [ "`uname -s`" = "Darwin" ]; then
+if [ $os_type = "Darwin" ]; then
     sed_regexp_option='E'
 else
     sed_regexp_option='r'
