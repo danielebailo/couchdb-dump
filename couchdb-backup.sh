@@ -223,7 +223,7 @@ if [ ! "x$username" = "x" ]&&[ ! "x$password" = "x" ]; then
 fi
 
 # Check for sed option
-if [ $os_type = "Darwin" ]; then
+if [ "$os_type" = "Darwin" ]; then
     sed_regexp_option='E'
 else
     sed_regexp_option='r'
