@@ -20,7 +20,7 @@
 
 
 ###################### CODE STARTS HERE ###################
-scriptversionnumber="1.1.2"
+scriptversionnumber="1.1.3"
 
 ##START: FUNCTIONS
 usage(){
@@ -223,12 +223,11 @@ if [ ! "x$username" = "x" ]&&[ ! "x$password" = "x" ]; then
 fi
 
 # Check for sed option
+sed_edit_in_place='-i.sedtmp'
 if [ "$os_type" = "Darwin" ]; then
     sed_regexp_option='E'
-    sed_edit_in_place='-i ""'
 else
     sed_regexp_option='r'
-    sed_edit_in_place='-i'
 fi
 # Allow for self-signed/invalid certs if method is HTTPS:
 if [ "`echo $url | grep -ic "^https://"`" = "1" ]; then
@@ -328,7 +327,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
             PADNUM=`printf "%06d" $NUM`
             PADNAME="${file_name}.thread${PADNUM}"
             cat ${PADNAME} >> ${file_name}.tmp
-            rm -f ${PADNAME}
+            rm -f ${PADNAME} ${PADNAME}.sedtmp
             (( NUM++ ))
         done
         if [ `wc -l ${file_name} | awk '{print$1}'` = `wc -l ${file_name}.tmp | awk '{print$1}'` ]; then
@@ -348,7 +347,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         filesize=`expr $filesize - $KBreduction`
         checkdiskspace "${file_name}" $filesize
-        sed ${sed_edit_in_place} 's/.*,"doc"://g' $file_name
+        sed ${sed_edit_in_place} 's/.*,"doc"://g' $file_name && rm -f ${file_name}.sedtmp
         if [ ! $? = 0 ];then
             echo "Stage failed."
             exit 1
@@ -361,7 +360,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
     filesize=`expr $filesize - $KBreduction`
     checkdiskspace "${file_name}" $filesize
-    sed ${sed_edit_in_place} 's/}},$/},/g' $file_name
+    sed ${sed_edit_in_place} 's/}},$/},/g' ${file_name} && rm -f ${file_name}.sedtmp
     if [ ! $? = 0 ];then
         echo "Stage failed."
         exit 1
@@ -369,7 +368,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     echo "... INFO: Stage 3 - Header Correction"
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
     checkdiskspace "${file_name}" $filesize
-    sed ${sed_edit_in_place} '1s/^.*/{"new_edits":false,"docs":[/' $file_name
+    sed ${sed_edit_in_place} '1s/^.*/{"new_edits":false,"docs":[/' ${file_name} && rm -f ${file_name}.sedtmp
     if [ ! $? = 0 ];then
         echo "Stage failed."
         exit 1
@@ -377,7 +376,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     echo "... INFO: Stage 4 - Final document line correction"
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
     checkdiskspace "${file_name}" $filesize
-    sed ${sed_edit_in_place} 's/}}$/}/g' $file_name
+    sed ${sed_edit_in_place} 's/}}$/}/g' ${file_name} && rm -f ${file_name}.sedtmp
     if [ ! $? = 0 ];then
         echo "Stage failed."
         exit 1
@@ -424,13 +423,13 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         # Remove these design docs from (our new) main file.
         echo "... INFO: Stripping _design elements from regular documents"
         checkdiskspace "${file_name}" $filesize
-        sed ${sed_edit_in_place} '/^{"_id":"_design/d' ${file_name}
+        sed ${sed_edit_in_place} '/^{"_id":"_design/d' ${file_name} && rm -f ${file_name}.sedtmp
         # Remove the final document's trailing comma
         echo "... INFO: Fixing end document"
         line=$(expr `wc -l ${file_name} | awk '{print$1}'` - 1)
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
-        sed ${sed_edit_in_place} "${line}s/,$//" ${file_name}
+        sed ${sed_edit_in_place} "${line}s/,$//" ${file_name} && rm -f ${file_name}.sedtmp
 
         echo "... INFO: Inserting Design documents"
         designcount=0
@@ -561,7 +560,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                     echo "... INFO: Adding header to ${PADNAME}"
                     filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
                     checkdiskspace "${PADNAME}" $filesize
-                    sed ${sed_edit_in_place} "1i${HEADER}" ${PADNAME}
+                    sed ${sed_edit_in_place} "1i${HEADER}" ${PADNAME} && rm -f ${PADNAME}.sedtmp
                 else
                     echo "... INFO: Header already applied to ${PADNAME}"
                 fi
@@ -569,7 +568,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                     echo "... INFO: Adding footer to ${PADNAME}"
                     filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
                     checkdiskspace "${PADNAME}" $filesize
-                    sed ${sed_edit_in_place} '$s/,$//g' ${PADNAME}
+                    sed ${sed_edit_in_place} '$s/,$//g' ${PADNAME} && rm -f ${PADNAME}.sedtmp
                     echo "${FOOTER}" >> ${PADNAME}
                 else
                     echo "... INFO: Footer already applied to ${PADNAME}"
