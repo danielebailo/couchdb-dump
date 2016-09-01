@@ -189,9 +189,13 @@ case $attempts in
 esac
 
 ## Manage the passing of http/https for $url:
-# Note; if the user wants to use 'https://' they must specify it exclusively in the '-H <HOSTNAME>' arg.
+# Note; if the user wants to use 'https://' on a non-443 port they must specify it exclusively in the '-H <HOSTNAME>' arg.
 if [ ! "`echo $url | grep -c http`" = 1 ]; then
-    url="http://$url"
+    if [ "$port" == "443" ]; then
+        url="https://$url";
+    else
+        url="http://$url";
+    fi
 fi
 
 # Manage the addition of port
