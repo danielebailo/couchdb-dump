@@ -219,13 +219,6 @@ elif [ ! "x$password" = "x" ]; then
     fi
 fi
 
-# If neither username or password are empty, we need to add it to our URL.
-if [ ! "x$username" = "x" ]&&[ ! "x$password" = "x" ]; then
-    httptype="`echo $url | awk -F'/' '{print$1}'`"
-    urlbase="`echo $url | awk -F'/' '{print$3}'`"
-    url="${httptype}//${username}:${password}@${urlbase}"
-fi
-
 # Check for sed option
 sed_edit_in_place='-i.sedtmp'
 if [ "$os_type" = "Darwin" ]; then
@@ -236,6 +229,10 @@ fi
 # Allow for self-signed/invalid certs if method is HTTPS:
 if [ "`echo $url | grep -ic "^https://"`" = "1" ]; then
 	curlopt="-k"
+fi
+
+if [ ! "x$username" = "x" ]&&[ ! "x$password" = "x" ]; then
+    curlopt="${curlopt} -U '${username}:${password}'"
 fi
 
 ## Check for curl
