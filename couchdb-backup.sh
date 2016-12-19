@@ -106,7 +106,7 @@ lines=5000
 attempts=3
 createDBsOnDemand=false
 
-while getopts ":h?H:d:f:u:p:P:l:t:a:c:V?b?B?r?R?" opt; do
+while getopts ":h?H:d:f:u:p:P:l:t:a:c?V?b?B?r?R?" opt; do
     case "$opt" in
         h) usage;;
         b|B) backup=true ;;
