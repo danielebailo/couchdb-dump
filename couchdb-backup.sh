@@ -5,8 +5,9 @@
 #    www.danielebailo.it
 #
 #    Contributors:
-#     * dalgibbard - http://github.com/dalgibbard
-#     * epos-eu    - http://github.com/epos-eu
+#     * dalgibbard      - http://github.com/dalgibbard
+#     * epos-eu         - http://github.com/epos-eu
+#     * maximilianhuber - http://github.com/maximilianhuber
 ##
 
 ## This script allow for the Backup and Restore of a CouchDB Database.
@@ -20,7 +21,7 @@
 
 
 ###################### CODE STARTS HERE ###################
-scriptversionnumber="1.1.3"
+scriptversionnumber="1.1.4"
 
 ##START: FUNCTIONS
 usage(){
@@ -37,6 +38,7 @@ usage(){
     echo -e "\t-l   Number of lines (documents) to Restore at a time. [Default: 5000] (Restore Only)"
     echo -e "\t-t   Number of CPU threads to use when parsing data [Default: nProcs-1] (Backup Only)"
     echo -e "\t-a   Number of times to Attempt import before failing [Default: 3] (Restore Only)"
+    echo -e "\t-c   Create DB on demand, if they are not listed."
     echo -e "\t-V   Display version information."
     echo -e "\t-h   Display usage information."
     echo
@@ -52,8 +54,9 @@ scriptversion(){
     echo -e "\t URL:\thttps://github.com/danielebailo/couchdb-dump"
     echo
     echo -e "\t Authors:"
-    echo -e "\t Daniele Bailo  (bailo.daniele@gmail.com)"
-    echo -e "\t Darren Gibbard (dalgibbard@gmail.com)"
+    echo -e "\t Daniele Bailo    (bailo.daniele@gmail.com)"
+    echo -e "\t Darren Gibbard   (dalgibbard@gmail.com)"
+    echo -e "\t Maximilian Huber (maximilian.huber@tngtech.com)"
     echo
     exit 1
 }
@@ -101,8 +104,9 @@ port=5984
 OPTIND=1
 lines=5000
 attempts=3
+createDBsOnDemand=false
 
-while getopts ":h?H:d:f:u:p:P:l:t:a:V?b?B?r?R?" opt; do
+while getopts ":h?H:d:f:u:p:P:l:t:a:c?V?b?B?r?R?" opt; do
     case "$opt" in
         h) usage;;
         b|B) backup=true ;;
@@ -116,7 +120,8 @@ while getopts ":h?H:d:f:u:p:P:l:t:a:V?b?B?r?R?" opt; do
         l) lines="${OPTARG}" ;;
         t) threads="${OPTARG}" ;;
         a) attempts="${OPTARG}";;
-        V) scriptversion;;        
+        c) createDBsOnDemand=true;;
+        V) scriptversion;;
         :) echo "... ERROR: Option \"-${OPTARG}\" requires an argument"; usage ;;
         *|\?) echo "... ERROR: Unknown Option \"-${OPTARG}\""; usage;;
     esac
@@ -398,7 +403,63 @@ elif [ $restore = true ]&&[ $backup = false ]; then
 
     #### VALIDATION END
 
-    ## Stop bash mangling wildcard... 
+    echo "... INFO: Checking for database"
+    existing_dbs=$(curl -X GET "${url}/_all_dbs")
+    if [ ! $? = 0 ]; then
+        echo "... ERROR: Curl failed to get the list of databases - Stopping"
+        exit 1
+    fi
+    if [[ ! "$existing_dbs" = "["*"]" ]]; then
+        echo "... WARN: Curl failed to get the list of databases - Continuing"
+        if [ "x$existing_dbs" = "x" ]; then
+            echo "... WARN: Curl just returned: $existing_dbs"
+        fi
+    elif [[ ! "$existing_dbs" = *"\"${db_name}\""* ]]; then
+        # database was not listed as existing databasa
+        if [ $createDBsOnDemand = true ]; then
+            attemptcount=0
+            A=0
+            until [ $A = 1 ]; do
+                (( attemptcount++ ))
+                curl -X PUT "${url}/${db_name}" -o tmp.out
+                # If curl threw an error:
+                if [ ! $? = 0 ]; then
+                    if [ $attemptcount = $attempts ]; then
+                        echo "... ERROR: Curl failed to create the database ${db_name} - Stopping"
+                        if [ -f tmp.out ]; then
+                            echo -n "... ERROR: Error message was:   "
+                            cat tmp.out
+                        else
+                            echo ".. ERROR: See above for any errors"
+                        fi
+                        exit 1
+                    else
+                        echo "... WARN: Curl failed to create the database ${db_name} - Attempt ${attemptcount}/${attempts}. Retrying..."
+                        sleep 1
+                    fi
+                # If curl was happy, but CouchDB returned an error in the return JSON:
+                elif [ ! "`head -n 1 tmp.out | grep -c 'error'`" = 0 ]; then
+                    if [ $attemptcount = $attempts ]; then
+                        echo "... ERROR: CouchDB Reported: `head -n 1 tmp.out`"
+                        exit 1
+                    else
+                        echo "... WARN: CouchDB Reported an error during db creation - Attempt ${attemptcount}/${attempts} - Retrying..."
+                        sleep 1
+                    fi
+                # Otherwise, if everything went well, delete our temp files.
+                else
+                    rm tmp.out
+                    A=1
+                fi
+            done
+        else
+            echo "... ERROR: corresponding datababase ${db_name} not yet created - Stopping"
+            echo "... HINT: you could add the -c flag to create the database automatically"
+            exit 1
+        fi
+    fi
+
+    ## Stop bash mangling wildcard...
     set -o noglob
     # Manage Design Documents as a priority, and remove them from the main import job
     echo "... INFO: Checking for Design documents"
