@@ -143,7 +143,6 @@ elif [ $backup = false ]&&[ $restore = false ]; then
     echo "... ERROR: Missing argument '-b' (Backup), or '-r' (Restore)"
     usage
 fi
-
 # Handle empty args
 # url
 if [ "x$url" = "x" ]; then
@@ -569,7 +568,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         until [ $A = 1 ]; do
             (( attemptcount++ ))
             curl -T $file_name -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
-            if [ "$?" = "0" ]; then
+            if [ "`head -n 1 tmp.out | grep -c 'error'`" -eq 0 ]; then
                 echo "... INFO: Imported ${file_name_orig} Successfully."
                 rm -f tmp.out
                 rm -f ${file_name_orig}-design
