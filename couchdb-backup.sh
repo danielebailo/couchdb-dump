@@ -72,7 +72,7 @@ checkdiskspace(){
     fi
 
     stripdir=${location%/*}
-    KBavail=$(df -P -k ${stripdir} | tail -n 1 | awk '{print$4}' | sed -e 's/K$//')
+    KBavail=$(df -P -k ${stripdir} | tail -n 1 | awk '{print$4}' | $sed_cmd -e 's/K$//')
 
     if [ $KBavail -ge $KBrequired ]; then
         return 0
@@ -164,10 +164,24 @@ file_name_orig=$file_name
 # Get OS TYPE (Linux for Linux, Darwin for MacOSX)
 os_type=`uname -s`
 
+# Pick sed or gsed
+if [ "$os_type" = "FreeBSD" ]; then
+    sed_cmd="gsed";
+else
+    sed_cmd="sed";
+fi
+## Make sure it's installed
+if ! which "$sed_cmd" > /dev/null 2>&1; then
+    echo "... ERROR: please install $sed_cmd and ensure it is in your path"
+fi
+
 # Validate thread count
 ## If we're on a Mac, use sysctl
 if [ "$os_type" = "Darwin" ]; then
     cores=`sysctl -n hw.ncpu`
+## If we're on FreeBSD, use sysctl
+elif [ "$os_type" = "FreeBSD" ]; then
+    cores=`sysctl kern.smp.cpus | awk -F ": " '{print $2}'`;
 ## Check if nproc available- set cores=1 if not
 elif ! type nproc >/dev/null; then
     cores=1
@@ -313,7 +327,8 @@ if [ $backup = true ]&&[ $restore = false ]; then
 
         ### SPLIT INTO THREADS
         split_cal=$(( $((`wc -l ${file_name} | awk '{print$1}'` / $threads)) + $threads ))
-        split --numeric-suffixes --suffix-length=6 -l ${split_cal} ${file_name} ${file_name}.thread
+        #split --numeric-suffixes --suffix-length=6 -l ${split_cal} ${file_name} ${file_name}.thread
+        split -d -a 6 -l ${split_cal} ${file_name} ${file_name}.thread
         if [ ! "$?" = "0" ]; then
             echo "... ERROR: Unable to create split files."
             exit 1
@@ -323,7 +338,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         for loop in `seq 1 ${threads}`; do
             PADNUM=`printf "%06d" $NUM`
             PADNAME="${file_name}.thread${PADNUM}"
-            sed ${sed_edit_in_place} 's/.*,"doc"://g' ${PADNAME} &
+            $sed_cmd ${sed_edit_in_place} 's/.*,"doc"://g' ${PADNAME} &
             (( NUM++ ))
         done
         wait
@@ -352,7 +367,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         filesize=`expr $filesize - $KBreduction`
         checkdiskspace "${file_name}" $filesize
-        sed ${sed_edit_in_place} 's/.*,"doc"://g' $file_name && rm -f ${file_name}.sedtmp
+        $sed_cmd ${sed_edit_in_place} 's/.*,"doc"://g' $file_name && rm -f ${file_name}.sedtmp
         if [ ! $? = 0 ];then
             echo "Stage failed."
             exit 1
@@ -365,7 +380,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
     filesize=`expr $filesize - $KBreduction`
     checkdiskspace "${file_name}" $filesize
-    sed ${sed_edit_in_place} 's/}},$/},/g' ${file_name} && rm -f ${file_name}.sedtmp
+    $sed_cmd ${sed_edit_in_place} 's/}},$/},/g' ${file_name} && rm -f ${file_name}.sedtmp
     if [ ! $? = 0 ];then
         echo "Stage failed."
         exit 1
@@ -373,7 +388,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     echo "... INFO: Stage 3 - Header Correction"
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
     checkdiskspace "${file_name}" $filesize
-    sed ${sed_edit_in_place} '1s/^.*/{"new_edits":false,"docs":[/' ${file_name} && rm -f ${file_name}.sedtmp
+    $sed_cmd ${sed_edit_in_place} '1s/^.*/{"new_edits":false,"docs":[/' ${file_name} && rm -f ${file_name}.sedtmp
     if [ ! $? = 0 ];then
         echo "Stage failed."
         exit 1
@@ -381,7 +396,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     echo "... INFO: Stage 4 - Final document line correction"
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
     checkdiskspace "${file_name}" $filesize
-    sed ${sed_edit_in_place} 's/}}$/}/g' ${file_name} && rm -f ${file_name}.sedtmp
+    $sed_cmd ${sed_edit_in_place} 's/}}$/}/g' ${file_name} && rm -f ${file_name}.sedtmp
     if [ ! $? = 0 ];then
         echo "Stage failed."
         exit 1
@@ -484,13 +499,13 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         # Remove these design docs from (our new) main file.
         echo "... INFO: Stripping _design elements from regular documents"
         checkdiskspace "${file_name}" $filesize
-        sed ${sed_edit_in_place} '/^{"_id":"_design/d' ${file_name} && rm -f ${file_name}.sedtmp
+        $sed_cmd ${sed_edit_in_place} '/^{"_id":"_design/d' ${file_name} && rm -f ${file_name}.sedtmp
         # Remove the final document's trailing comma
         echo "... INFO: Fixing end document"
         line=$(expr `wc -l ${file_name} | awk '{print$1}'` - 1)
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
-        sed ${sed_edit_in_place} "${line}s/,$//" ${file_name} && rm -f ${file_name}.sedtmp
+        $sed_cmd ${sed_edit_in_place} "${line}s/,$//" ${file_name} && rm -f ${file_name}.sedtmp
 
         echo "... INFO: Inserting Design documents"
         designcount=0
@@ -500,7 +515,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             # Split the ID out for use as the import URL path
             URLPATH=$(echo $line | awk -F'"' '{print$4}')
             # Scrap the ID and Rev from the main data, as well as any trailing ','
-            echo "${line}" | sed -${sed_regexp_option}e "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | sed -e 's/,$//' > ${design_file_name}.${designcount}
+            echo "${line}" | $sed_cmd -${sed_regexp_option}e "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | $sed_cmd -e 's/,$//' > ${design_file_name}.${designcount}
             # Fix Windows CRLF
             if [ "`file ${design_file_name}.${designcount} | grep -c CRLF`" = "1" ]; then
                 echo "... INFO: File contains Windows carridge returns- converting..."
@@ -603,7 +618,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
         ### Split the file into many
-        split --numeric-suffixes --suffix-length=6 -l ${lines} ${file_name} ${file_name}.split
+        split -d -a 6 -l ${lines} ${file_name} ${file_name}.split
         if [ ! "$?" = "0" ]; then
             echo "... ERROR: Unable to create split files."
             exit 1
@@ -621,7 +636,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                     echo "... INFO: Adding header to ${PADNAME}"
                     filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
                     checkdiskspace "${PADNAME}" $filesize
-                    sed ${sed_edit_in_place} "1i${HEADER}" ${PADNAME} && rm -f ${PADNAME}.sedtmp
+                    $sed_cmd ${sed_edit_in_place} "1i${HEADER}" ${PADNAME} && rm -f ${PADNAME}.sedtmp
                 else
                     echo "... INFO: Header already applied to ${PADNAME}"
                 fi
@@ -629,7 +644,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                     echo "... INFO: Adding footer to ${PADNAME}"
                     filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
                     checkdiskspace "${PADNAME}" $filesize
-                    sed ${sed_edit_in_place} '$s/,$//g' ${PADNAME} && rm -f ${PADNAME}.sedtmp
+                    $sed_cmd ${sed_edit_in_place} '$s/,$//g' ${PADNAME} && rm -f ${PADNAME}.sedtmp
                     echo "${FOOTER}" >> ${PADNAME}
                 else
                     echo "... INFO: Footer already applied to ${PADNAME}"
@@ -677,3 +692,4 @@ else
     echo "... ERROR: How did you get here??"
     exit 1
 fi
+
