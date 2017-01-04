@@ -38,6 +38,8 @@ Usage: ./couchdb-backup.sh [-b|-r] -H <COUCHDB_HOST> -d <DB_NAME> -f <BACKUP_FIL
         -l   Number of lines (documents) to Restore at a time. [Default: 5000] (Restore Only)
         -t   Number of CPU threads to use when parsing data [Default: nProcs-1] (Backup Only)
         -a   Number of times to Attempt import before failing [Default: 3] (Restore Only)
+        -c   Create DB on demand, if they are not listed.
+        -q   Run in quiet mode. Suppress output, except for errors and warnings.
         -V   Display version information.
         -h   Display usage information.
 
