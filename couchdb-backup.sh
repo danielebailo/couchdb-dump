@@ -8,6 +8,7 @@
 #     * dalgibbard      - http://github.com/dalgibbard
 #     * epos-eu         - http://github.com/epos-eu
 #     * maximilianhuber - http://github.com/maximilianhuber
+#     * ahodgkinson     - http://github.com/ahodgkinson (quiet-mode)
 ##
 
 ## This script allow for the Backup and Restore of a CouchDB Database.
@@ -39,6 +40,9 @@ usage(){
     echo -e "\t-t   Number of CPU threads to use when parsing data [Default: nProcs-1] (Backup Only)"
     echo -e "\t-a   Number of times to Attempt import before failing [Default: 3] (Restore Only)"
     echo -e "\t-c   Create DB on demand, if they are not listed."
+    echo -e "\t-q   Run in quiet mode. Suppress output, except for errors and warnings."
+    echo -e "\t-z   Compress output file (Backup Only)"
+    echo -e "\t-T   Add datetime stamp to output file name (Backup Only)"
     echo -e "\t-V   Display version information."
     echo -e "\t-h   Display usage information."
     echo
@@ -105,8 +109,11 @@ OPTIND=1
 lines=5000
 attempts=3
 createDBsOnDemand=false
+verboseMode=true
+compress=false
+timestamp=false
 
-while getopts ":h?H:d:f:u:p:P:l:t:a:c?V?b?B?r?R?" opt; do
+while getopts ":h?H:d:f:u:p:P:l:t:a:c?q?z?T?V?b?B?r?R?" opt; do
     case "$opt" in
         h) usage;;
         b|B) backup=true ;;
@@ -121,11 +128,23 @@ while getopts ":h?H:d:f:u:p:P:l:t:a:c?V?b?B?r?R?" opt; do
         t) threads="${OPTARG}" ;;
         a) attempts="${OPTARG}";;
         c) createDBsOnDemand=true;;
+        q) verboseMode=false;;
+        z) compress=true;;
+        T) timestamp=true;;
         V) scriptversion;;
         :) echo "... ERROR: Option \"-${OPTARG}\" requires an argument"; usage ;;
         *|\?) echo "... ERROR: Unknown Option \"-${OPTARG}\""; usage;;
     esac
 done
+
+# If quiet option: Setup echo mode and curl '--silent' opt
+if [ "$verboseMode" = true ]; then
+  curlSilentOpt=""
+  echoVerbose=true
+else
+  curlSilentOpt="--silent"
+  echoVerbose=false
+fi
 
 # Trap unexpected extra args
 shift $((OPTIND-1))
@@ -194,7 +213,7 @@ if [ ! "x$threads" = "x" ]; then
         echo "... WARN: Thread setting of $threads is more than CPU count. Setting to $cores"
         threads=$cores
     else
-        echo "... INFO: Setting parser threads to $threads"
+        $echoVerbose && echo "... INFO: Setting parser threads to $threads"
     fi
 else
     threads=`expr $cores - 1`
@@ -264,6 +283,21 @@ if [ $backup = true ]&&[ $restore = false ]; then
     #################################################################
     ##################### BACKUP START ##############################
     #################################################################
+
+    # If -T (timestamp) option, append datetime stamp ("-YYYYMMDD-hhmmss") before file extension
+    if [ "$timestamp" = true ]; then
+      datetime=`date "+%Y%m%d-%H%M%S"`						# Format: YYYYMMDD-hhmmss
+      # Check for file_name extension, if so add the timestamp before it
+      if [[ $file_name =~ \.[a-zA-Z0-9][a-zA-Z0-9_]* ]]; then
+        file_name_ext=` echo "$file_name" | sed 's/.*\.//'`			# Get text after last '.'
+        file_name_base=`echo "$file_name" | sed "s/\.${file_name_ext}$//"`	# file_name without '.' & extension
+        file_name="$file_name_base-$datetime.$file_name_ext"
+      else # Otherwise add timestamp to the end of file_name
+        file_name="$file_name-$datetime"
+      fi
+    fi
+    $echoVerbose && echo "... INFO: Output file ${file_name}"
+
     # Check if output already exists:
     if [ -f ${file_name} ]; then
         echo "... ERROR: Output file ${file_name} already exists."
@@ -271,7 +305,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     fi
 
     # Grab our data from couchdb
-    curl ${curlopt} -X GET "$url/$db_name/_all_docs?include_docs=true&attachments=true" -o ${file_name}
+    curl ${curlSilentOpt} ${curlopt} -X GET "$url/$db_name/_all_docs?include_docs=true&attachments=true" -o ${file_name}
     # Check for curl errors
     if [ ! $? = 0 ]; then
         echo "... ERROR: Curl encountered an issue whilst dumping the database."
@@ -288,14 +322,14 @@ if [ $backup = true ]&&[ $restore = false ]; then
     # CouchDB has a tendancy to output Windows carridge returns in it's output -
     # This messes up us trying to sed things at the end of lines!
     if [ "`file $file_name | grep -c CRLF`" = "1" ]; then
-        echo "... INFO: File contains Windows carridge returns- converting..."
+        $echoVerbose && echo "... INFO: File contains Windows carridge returns- converting..."
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
         tr -d '\r' < ${file_name} > ${file_name}.tmp
         if [ $? = 0 ]; then
             mv ${file_name}.tmp ${file_name}
             if [ $? = 0 ]; then
-                echo "... INFO: Completed successfully."
+                $echoVerbose && echo "... INFO: Completed successfully."
             else
                 echo "... ERROR: Failed to overwrite ${file_name} with ${file_name}.tmp"
                 exit 1
@@ -307,8 +341,8 @@ if [ $backup = true ]&&[ $restore = false ]; then
     fi
 
     ## Now we parse the output file to make it suitable for re-import.
-    echo "... INFO: Amending file to make it suitable for Import."
-    echo "... INFO: Stage 1 - Document filtering"
+    $echoVerbose && echo "... INFO: Amending file to make it suitable for Import."
+    $echoVerbose && echo "... INFO: Stage 1 - Document filtering"
 
     # If the input file is larger than 250MB, multi-thread the parsing:
     if [ $(du -P -k ${file_name} | awk '{print$1}') -ge 256000 ]&&[ ! $threads -le 1 ]; then
@@ -316,7 +350,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         KBreduction=$(($((`wc -l ${file_name} | awk '{print$1}'` * 80)) / 1024))
         filesize=`expr $filesize + $(expr $filesize - $KBreduction)`
         checkdiskspace "${file_name}" $filesize
-        echo "... INFO: Multi-Threaded Parsing Enabled."
+        $echoVerbose && echo "... INFO: Multi-Threaded Parsing Enabled."
         if [ -f ${file_name}.thread000000 ]; then
             echo "... ERROR: Split files \"${file_name}.thread*\" already present. Please remove before continuing."
             exit 1
@@ -374,7 +408,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         fi
     fi
 
-    echo "... INFO: Stage 2 - Duplicate curly brace removal"
+    $echoVerbose && echo "... INFO: Stage 2 - Duplicate curly brace removal"
     # Approx 1Byte per line removed
     KBreduction=$((`wc -l ${file_name} | awk '{print$1}'` / 1024))
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
@@ -385,7 +419,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         echo "Stage failed."
         exit 1
     fi
-    echo "... INFO: Stage 3 - Header Correction"
+    $echoVerbose && echo "... INFO: Stage 3 - Header Correction"
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
     checkdiskspace "${file_name}" $filesize
     $sed_cmd ${sed_edit_in_place} '1s/^.*/{"new_edits":false,"docs":[/' ${file_name} && rm -f ${file_name}.sedtmp
@@ -393,7 +427,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         echo "Stage failed."
         exit 1
     fi
-    echo "... INFO: Stage 4 - Final document line correction"
+    $echoVerbose && echo "... INFO: Stage 4 - Final document line correction"
     filesize=$(du -P -k ${file_name} | awk '{print$1}')
     checkdiskspace "${file_name}" $filesize
     $sed_cmd ${sed_edit_in_place} 's/}}$/}/g' ${file_name} && rm -f ${file_name}.sedtmp
@@ -402,7 +436,14 @@ if [ $backup = true ]&&[ $restore = false ]; then
         exit 1
     fi
 
-    echo "... INFO: Export completed successfully. File available at: ${file_name}"
+    # If -z (compress) option then compress output file
+    if [ "$compress" = true ]; then
+      $echoVerbose && echo "... INFO: Stage 5 - File compression"
+      gzip $file_name
+      file_name="$file_name.gz"
+    fi
+
+    $echoVerbose && echo "... INFO: Export completed successfully. File available at: ${file_name}"
 
 ### Else if user selected Restore:
 elif [ $restore = true ]&&[ $backup = false ]; then
@@ -417,8 +458,8 @@ elif [ $restore = true ]&&[ $backup = false ]; then
 
     #### VALIDATION END
 
-    echo "... INFO: Checking for database"
-    existing_dbs=$(curl -X GET "${url}/_all_dbs")
+    $echoVerbose && echo "... INFO: Checking for database"
+    existing_dbs=$(curl $curlSilentOpt -X GET "${url}/_all_dbs")
     if [ ! $? = 0 ]; then
         echo "... ERROR: Curl failed to get the list of databases - Stopping"
         exit 1
@@ -435,7 +476,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             A=0
             until [ $A = 1 ]; do
                 (( attemptcount++ ))
-                curl -X PUT "${url}/${db_name}" -o tmp.out
+                curl $curlSilentOpt -X PUT "${url}/${db_name}" -o tmp.out
                 # If curl threw an error:
                 if [ ! $? = 0 ]; then
                     if [ $attemptcount = $attempts ]; then
@@ -468,7 +509,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             done
         else
             echo "... ERROR: corresponding datababase ${db_name} not yet created - Stopping"
-            echo "... HINT: you could add the -c flag to create the database automatically"
+            $echoVerbose && echo "... HINT: you could add the -c flag to create the database automatically"
             exit 1
         fi
     fi
@@ -476,7 +517,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
     ## Stop bash mangling wildcard...
     set -o noglob
     # Manage Design Documents as a priority, and remove them from the main import job
-    echo "... INFO: Checking for Design documents"
+    $echoVerbose && echo "... INFO: Checking for Design documents"
     # Find all _design docs, put them into another file
     design_file_name=${file_name}-design
     grep '^{"_id":"_design' ${file_name} > ${design_file_name}
@@ -487,9 +528,9 @@ elif [ $restore = true ]&&[ $backup = false ]; then
     if [ "x$DESIGNS" = "x" ]||[ "$DESIGNS" = "0" ]; then 
         # Cleanup any null files
         rm -f ${design_file_name} 2>/dev/null
-        echo "... INFO: No Design Documents found for import."
+        $echoVerbose && echo "... INFO: No Design Documents found for import."
     else
-        echo "... INFO: Duplicating original file for alteration"
+        $echoVerbose && echo "... INFO: Duplicating original file for alteration"
         # Duplicate the original DB file, so we don't mangle the user's input file:
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
@@ -497,17 +538,17 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         # Re-set file_name to be our new file.
         file_name=${file_name}-nodesign
         # Remove these design docs from (our new) main file.
-        echo "... INFO: Stripping _design elements from regular documents"
+        $echoVerbose && echo "... INFO: Stripping _design elements from regular documents"
         checkdiskspace "${file_name}" $filesize
         $sed_cmd ${sed_edit_in_place} '/^{"_id":"_design/d' ${file_name} && rm -f ${file_name}.sedtmp
         # Remove the final document's trailing comma
-        echo "... INFO: Fixing end document"
+        $echoVerbose && echo "... INFO: Fixing end document"
         line=$(expr `wc -l ${file_name} | awk '{print$1}'` - 1)
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
         $sed_cmd ${sed_edit_in_place} "${line}s/,$//" ${file_name} && rm -f ${file_name}.sedtmp
 
-        echo "... INFO: Inserting Design documents"
+        $echoVerbose && echo "... INFO: Inserting Design documents"
         designcount=0
         # For each design doc...
         while IFS="" read -r; do
@@ -518,14 +559,14 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             echo "${line}" | $sed_cmd -${sed_regexp_option}e "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | $sed_cmd -e 's/,$//' > ${design_file_name}.${designcount}
             # Fix Windows CRLF
             if [ "`file ${design_file_name}.${designcount} | grep -c CRLF`" = "1" ]; then
-                echo "... INFO: File contains Windows carridge returns- converting..."
+                $echoVerbose && echo "... INFO: File contains Windows carridge returns- converting..."
                 filesize=$(du -P -k ${design_file_name}.${designcount} | awk '{print$1}')
                 checkdiskspace "${file_name}" $filesize
                 tr -d '\r' < ${design_file_name}.${designcount} > ${design_file_name}.${designcount}.tmp
                 if [ $? = 0 ]; then
                     mv ${design_file_name}.${designcount}.tmp ${design_file_name}.${designcount}
                     if [ $? = 0 ]; then
-                        echo "... INFO: Completed successfully."
+                        $echoVerbose && echo "... INFO: Completed successfully."
                     else
                         echo "... ERROR: Failed to overwrite ${design_file_name}.${designcount} with ${design_file_name}.${designcount}.tmp"
                         exit 1
@@ -541,7 +582,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             attemptcount=0
             until [ $A = 1 ]; do
                 (( attemptcount++ ))
-                curl -T ${design_file_name}.${designcount} -X PUT "${url}/${db_name}/${URLPATH}" -H 'Content-Type: application/json' -o ${design_file_name}.out.${designcount}
+                curl $curlSilentOpt -T ${design_file_name}.${designcount} -X PUT "${url}/${db_name}/${URLPATH}" -H 'Content-Type: application/json' -o ${design_file_name}.out.${designcount}
                 # If curl threw an error:
                 if [ ! $? = 0 ]; then
                      if [ $attemptcount = $attempts ]; then
@@ -571,20 +612,20 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             (( designcount++ ))
         # NOTE: This is where we insert the design lines exported from the main block
         done < <(cat ${design_file_name})
-        echo "... INFO: Successfully imported ${designcount} Design Documents"
+        $echoVerbose && echo "... INFO: Successfully imported ${designcount} Design Documents"
     fi
     set +o noglob
 
     # If the size of the file to import is less than our $lines size, don't worry about splitting
     if [ `wc -l $file_name | awk '{print$1}'` -lt $lines ]; then
-        echo "... INFO: Small dataset. Importing as a single file."
+        $echoVerbose && echo "... INFO: Small dataset. Importing as a single file."
         A=0
         attemptcount=0
         until [ $A = 1 ]; do
             (( attemptcount++ ))
-            curl -T $file_name -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
+            curl $curlSilentOpt -T $file_name -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
             if [ "`head -n 1 tmp.out | grep -c 'error'`" -eq 0 ]; then
-                echo "... INFO: Imported ${file_name_orig} Successfully."
+                $echoVerbose && echo "... INFO: Imported ${file_name_orig} Successfully."
                 rm -f tmp.out
                 rm -f ${file_name_orig}-design
                 rm -f ${file_name_orig}-nodesign
@@ -608,13 +649,13 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         done
     # Otherwise, it's a large import that requires bulk insertion.
     else
-        echo "... INFO: Block import set to ${lines} lines."
+        $echoVerbose && echo "... INFO: Block import set to ${lines} lines."
         if [ -f ${file_name}.split000000 ]; then
             echo "... ERROR: Split files \"${file_name}.split*\" already present. Please remove before continuing."
             exit 1
         fi
 
-        echo "... INFO: Generating files to import"
+        $echoVerbose && echo "... INFO: Generating files to import"
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
         ### Split the file into many
@@ -633,28 +674,28 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             PADNAME="${file_name}.split${PADNUM}"
             if [ -f ${PADNAME} ]; then
                 if [ ! "`head -n 1 ${PADNAME}`" = "${HEADER}" ]; then
-                    echo "... INFO: Adding header to ${PADNAME}"
+                    $echoVerbose && echo "... INFO: Adding header to ${PADNAME}"
                     filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
                     checkdiskspace "${PADNAME}" $filesize
                     $sed_cmd ${sed_edit_in_place} "1i${HEADER}" ${PADNAME} && rm -f ${PADNAME}.sedtmp
                 else
-                    echo "... INFO: Header already applied to ${PADNAME}"
+                    $echoVerbose && echo "... INFO: Header already applied to ${PADNAME}"
                 fi
                 if [ ! "`tail -n 1 ${PADNAME}`" = "${FOOTER}" ]; then
-                    echo "... INFO: Adding footer to ${PADNAME}"
+                    $echoVerbose && echo "... INFO: Adding footer to ${PADNAME}"
                     filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
                     checkdiskspace "${PADNAME}" $filesize
                     $sed_cmd ${sed_edit_in_place} '$s/,$//g' ${PADNAME} && rm -f ${PADNAME}.sedtmp
                     echo "${FOOTER}" >> ${PADNAME}
                 else
-                    echo "... INFO: Footer already applied to ${PADNAME}"
+                    $echoVerbose && echo "... INFO: Footer already applied to ${PADNAME}"
                 fi
-                echo "... INFO: Inserting ${PADNAME}"
+                $echoVerbose && echo "... INFO: Inserting ${PADNAME}"
                 B=0
                 attemptcount=0
                 until [ $B = 1 ]; do
                     (( attemptcount++ ))
-                    curl -T ${PADNAME} -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
+                    curl $curlSilentOpt -T ${PADNAME} -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
                     if [ ! $? = 0 ]; then
                         if [ $attemptcount = $attempts ]; then
                             echo "... ERROR: Curl failed trying to restore ${PADNAME} - Stopping"
@@ -679,7 +720,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                 done
                 (( NUM++ ))
             else
-                echo "... INFO: Successfully Imported `expr ${NUM} - 1` Files"
+                $echoVerbose && echo "... INFO: Successfully Imported `expr ${NUM} - 1` Files"
                 A=1
                 rm -f ${file_name_orig}-design
                 rm -f ${file_name_orig}-nodesign
