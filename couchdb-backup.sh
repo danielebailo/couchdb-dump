@@ -8,7 +8,7 @@
 #     * dalgibbard      - http://github.com/dalgibbard
 #     * epos-eu         - http://github.com/epos-eu
 #     * maximilianhuber - http://github.com/maximilianhuber
-#     * ahodgkinson     - http://github.com/ahodgkinson (quiet-mode)
+#     * ahodgkinson     - http://github.com/ahodgkinson (quiet-mode, timestamp, compress)
 ##
 
 ## This script allow for the Backup and Restore of a CouchDB Database.
@@ -289,8 +289,8 @@ if [ $backup = true ]&&[ $restore = false ]; then
       datetime=`date "+%Y%m%d-%H%M%S"`						# Format: YYYYMMDD-hhmmss
       # Check for file_name extension, if so add the timestamp before it
       if [[ $file_name =~ \.[a-zA-Z0-9][a-zA-Z0-9_]* ]]; then
-        file_name_ext=` echo "$file_name" | sed 's/.*\.//'`			# Get text after last '.'
-        file_name_base=`echo "$file_name" | sed "s/\.${file_name_ext}$//"`	# file_name without '.' & extension
+        file_name_ext=` echo "$file_name" | $sed_cmd 's/.*\.//'`		# Get text after last '.'
+        file_name_base=`echo "$file_name" | $sed_cmd "s/\.${file_name_ext}$//"`	# file_name without '.' & extension
         file_name="$file_name_base-$datetime.$file_name_ext"
       else # Otherwise add timestamp to the end of file_name
         file_name="$file_name-$datetime"
