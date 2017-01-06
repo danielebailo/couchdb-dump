@@ -41,6 +41,8 @@ usage(){
     echo -e "\t-a   Number of times to Attempt import before failing [Default: 3] (Restore Only)"
     echo -e "\t-c   Create DB on demand, if they are not listed."
     echo -e "\t-q   Run in quiet mode. Suppress output, except for errors and warnings."
+    echo -e "\t-z   Compress output file (Backup Only)"
+    echo -e "\t-T   Add datetime stamp to output file name (Backup Only)"
     echo -e "\t-V   Display version information."
     echo -e "\t-h   Display usage information."
     echo
@@ -108,8 +110,10 @@ lines=5000
 attempts=3
 createDBsOnDemand=false
 verboseMode=true
+compress=false
+timestamp=false
 
-while getopts ":h?H:d:f:u:p:P:l:t:a:c?q?V?b?B?r?R?" opt; do
+while getopts ":h?H:d:f:u:p:P:l:t:a:c?q?z?T?V?b?B?r?R?" opt; do
     case "$opt" in
         h) usage;;
         b|B) backup=true ;;
@@ -125,6 +129,8 @@ while getopts ":h?H:d:f:u:p:P:l:t:a:c?q?V?b?B?r?R?" opt; do
         a) attempts="${OPTARG}";;
         c) createDBsOnDemand=true;;
         q) verboseMode=false;;
+        z) compress=true;;
+        T) timestamp=true;;
         V) scriptversion;;
         :) echo "... ERROR: Option \"-${OPTARG}\" requires an argument"; usage ;;
         *|\?) echo "... ERROR: Unknown Option \"-${OPTARG}\""; usage;;
@@ -277,6 +283,21 @@ if [ $backup = true ]&&[ $restore = false ]; then
     #################################################################
     ##################### BACKUP START ##############################
     #################################################################
+
+    # If -T (timestamp) option, append datetime stamp ("-YYYYMMDD-hhmmss") before file extension
+    if [ "$timestamp" = true ]; then
+      datetime=`date "+%Y%m%d-%H%M%S"`						# Format: YYYYMMDD-hhmmss
+      # Check for file_name extension, if so add the timestamp before it
+      if [[ $file_name =~ \.[a-zA-Z0-9][a-zA-Z0-9_]* ]]; then
+        file_name_ext=` echo "$file_name" | sed 's/.*\.//'`			# Get text after last '.'
+        file_name_base=`echo "$file_name" | sed "s/\.${file_name_ext}$//"`	# file_name without '.' & extension
+        file_name="$file_name_base-$datetime.$file_name_ext"
+      else # Otherwise add timestamp to the end of file_name
+        file_name="$file_name-$datetime"
+      fi
+    fi
+    $echoVerbose && echo "... INFO: Output file ${file_name}"
+
     # Check if output already exists:
     if [ -f ${file_name} ]; then
         echo "... ERROR: Output file ${file_name} already exists."
@@ -413,6 +434,13 @@ if [ $backup = true ]&&[ $restore = false ]; then
     if [ ! $? = 0 ];then
         echo "Stage failed."
         exit 1
+    fi
+
+    # If -z (compress) option then compress output file
+    if [ "$compress" = true ]; then
+      $echoVerbose && echo "... INFO: Stage 5 - File compression"
+      gzip $file_name
+      file_name="$file_name.gz"
     fi
 
     $echoVerbose && echo "... INFO: Export completed successfully. File available at: ${file_name}"
