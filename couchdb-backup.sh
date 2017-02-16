@@ -269,7 +269,7 @@ if [ "`echo $url | grep -ic "^https://"`" = "1" ]; then
 fi
 
 if [ ! "x$username" = "x" ]&&[ ! "x$password" = "x" ]; then
-    curlopt="${curlopt} -U '${username}:${password}'"
+    curlopt="${curlopt} -u ${username}:${password}"
 fi
 
 ## Check for curl
@@ -459,7 +459,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
     #### VALIDATION END
 
     $echoVerbose && echo "... INFO: Checking for database"
-    existing_dbs=$(curl $curlSilentOpt -X GET "${url}/_all_dbs")
+    existing_dbs=$(curl $curlSilentOpt $curlopt -X GET "${url}/_all_dbs")
     if [ ! $? = 0 ]; then
         echo "... ERROR: Curl failed to get the list of databases - Stopping"
         exit 1
@@ -476,7 +476,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             A=0
             until [ $A = 1 ]; do
                 (( attemptcount++ ))
-                curl $curlSilentOpt -X PUT "${url}/${db_name}" -o tmp.out
+                curl $curlSilentOpt $curlopt -X PUT "${url}/${db_name}" -o tmp.out
                 # If curl threw an error:
                 if [ ! $? = 0 ]; then
                     if [ $attemptcount = $attempts ]; then
@@ -582,7 +582,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             attemptcount=0
             until [ $A = 1 ]; do
                 (( attemptcount++ ))
-                curl $curlSilentOpt -T ${design_file_name}.${designcount} -X PUT "${url}/${db_name}/${URLPATH}" -H 'Content-Type: application/json' -o ${design_file_name}.out.${designcount}
+                curl $curlSilentOpt ${curlopt} -T ${design_file_name}.${designcount} -X PUT "${url}/${db_name}/${URLPATH}" -H 'Content-Type: application/json' -o ${design_file_name}.out.${designcount}
                 # If curl threw an error:
                 if [ ! $? = 0 ]; then
                      if [ $attemptcount = $attempts ]; then
@@ -623,7 +623,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         attemptcount=0
         until [ $A = 1 ]; do
             (( attemptcount++ ))
-            curl $curlSilentOpt -T $file_name -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
+            curl $curlSilentOpt $curlopt -T $file_name -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
             if [ "`head -n 1 tmp.out | grep -c 'error'`" -eq 0 ]; then
                 $echoVerbose && echo "... INFO: Imported ${file_name_orig} Successfully."
                 rm -f tmp.out
@@ -695,7 +695,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                 attemptcount=0
                 until [ $B = 1 ]; do
                     (( attemptcount++ ))
-                    curl $curlSilentOpt -T ${PADNAME} -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
+                    curl $curlSilentOpt $curlopt -T ${PADNAME} -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
                     if [ ! $? = 0 ]; then
                         if [ $attemptcount = $attempts ]; then
                             echo "... ERROR: Curl failed trying to restore ${PADNAME} - Stopping"
