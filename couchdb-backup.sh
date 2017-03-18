@@ -22,7 +22,7 @@
 
 
 ###################### CODE STARTS HERE ###################
-scriptversionnumber="1.1.4"
+scriptversionnumber="1.1.5"
 
 ##START: FUNCTIONS
 usage(){
@@ -121,8 +121,8 @@ while getopts ":h?H:d:f:u:p:P:l:t:a:c?q?z?T?V?b?B?r?R?" opt; do
         H) url="$OPTARG" ;;
         d) db_name="$OPTARG" ;;
         f) file_name="$OPTARG" ;;
-        u) username="$OPTARG";;
-        p) password="$OPTARG";;
+        u) username="${OPTARG}";;
+        p) password="${OPTARG}";;
         P) port="${OPTARG}";;
         l) lines="${OPTARG}" ;;
         t) threads="${OPTARG}" ;;
@@ -244,13 +244,13 @@ fi
 
 ## Manage the addition of user+pass if needed:
 # Ensure, if one is set, both are set.
-if [ ! "x$username" = "x" ]; then
-    if [ "x$password" = "x" ]; then
+if [ ! "x${username}" = "x" ]; then
+    if [ "x${password}" = "x" ]; then
         echo "... ERROR: Password cannot be blank, if username is specified."
         usage
     fi
-elif [ ! "x$password" = "x" ]; then
-    if [ "x$username" = "x" ]; then
+elif [ ! "x${password}" = "x" ]; then
+    if [ "x${username}" = "x" ]; then
         echo "... ERROR: Username cannot be blank, if password is specified."
         usage
     fi
@@ -268,15 +268,15 @@ if [ "`echo $url | grep -ic "^https://"`" = "1" ]; then
 	curlopt="-k"
 fi
 
-if [ ! "x$username" = "x" ]&&[ ! "x$password" = "x" ]; then
+if [ ! "x${username}" = "x" ]&&[ ! "x${password}" = "x" ]; then
     curlopt="${curlopt} -u ${username}:${password}"
 fi
 
 ## Check for curl
-if [ "x`which curl`" = "x" ]; then
-    echo "... ERROR: This script requires 'curl' to be present."
-    exit 1
-fi
+curl --version >/dev/null 2>&1 || ( echo "... ERROR: This script requires 'curl' to be present."; exit 1 )
+
+# Check for tr
+tr --help >/dev/null 2>&1 || ( echo "... ERROR: This script requires 'tr' to be present."; exit 1 )
 
 ### If user selected BACKUP, run the following code:
 if [ $backup = true ]&&[ $restore = false ]; then
@@ -321,8 +321,8 @@ if [ $backup = true ]&&[ $restore = false ]; then
 
     # CouchDB has a tendancy to output Windows carridge returns in it's output -
     # This messes up us trying to sed things at the end of lines!
-    if [ "`file $file_name | grep -c CRLF`" = "1" ]; then
-        $echoVerbose && echo "... INFO: File contains Windows carridge returns- converting..."
+    if [ "`file $file_name 2>/dev/null | grep -c CRLF`" = "1" ]||[ ! "`file --help >/dev/null 2>&1; echo $?`" = "0" ]; then
+        $echoVerbose && echo "... INFO: File may contain Windows carridge returns- converting..."
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
         tr -d '\r' < ${file_name} > ${file_name}.tmp

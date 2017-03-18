@@ -5,7 +5,7 @@ It works on LINUX/UNIX, Bash based systems (MacOSx)
 
 **Bash command line script to EASILY Backup & Restore a CouchDB database**
 
- * Needs bash
+ * Needs bash (plus curl, tr, file, split, awk, sed)
  * Dumped database is output to a file (configurable).
 
 ##Quickstart (& quickend)
@@ -23,6 +23,10 @@ Surprisingly, there is not a straightforward way to dump a CouchDB database. Oft
 **But, using the `_all_docs` directive provides you with JSON which cannot be directly re-import back into CouchDB**.
 
 Hence, the goal of this script(s) is to give you a simple way to Dump & Restore your CouchDB database.
+
+## NOTE
+
+Attachments in Database documents are only supported in CouchDB 1.6+
 
 ## Usage
 ```
@@ -60,5 +64,5 @@ CouchDB is an append-only database. When you delete records, the metadata is mai
 With the above points in mind; the export and import does not include Deleted documents, or old revisions; therefore, using this script, you can export and re-import your data, cleansing it of any previously (logically) deleted data!
 
 If you pair this with deletion and re-creation of replication rules (using the 'update_seq' parameter to avoid re-pulling the entire DB/deleted documents from a remote node) you can manually compress and clean out an entire cluster of waste, node-by-node.
-Note though; after creating all the rules with a fixed update_seq, once completed to the entire cluster, you will need to destroy and recereate all replication rules without the fixed update_seq - else, when restarting a node etc, replication will restart from the old seq.
+Note though; after creating all the rules with a fixed update_seq, once completed to the entire cluster, you will need to destroy and recreate all replication rules without the fixed update_seq - else, when restarting a node etc, replication will restart from the old seq.
 
