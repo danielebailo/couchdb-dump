@@ -22,7 +22,7 @@
 
 
 ###################### CODE STARTS HERE ###################
-scriptversionnumber="1.1.6"
+scriptversionnumber="1.1.7"
 
 ##START: FUNCTIONS
 usage(){
@@ -184,14 +184,16 @@ file_name_orig=$file_name
 os_type=`uname -s`
 
 # Pick sed or gsed
-if [ "$os_type" = "FreeBSD" ]; then
+if [ "$os_type" = "FreeBSD" ]||[ "$os_type" = "Darwin" ]; then
     sed_cmd="gsed";
 else
     sed_cmd="sed";
 fi
 ## Make sure it's installed
-if ! which "$sed_cmd" > /dev/null 2>&1; then
-    echo "... ERROR: please install $sed_cmd and ensure it is in your path"
+echo | $sed_cmd 's/a//' >/dev/null 2>&1 
+if [ ! $? = 0 ]; then
+    echo "... ERROR: please install $sed_cmd (gnu-sed) and ensure it is in your path"
+    exit 1
 fi
 
 # Validate thread count
