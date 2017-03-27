@@ -276,12 +276,11 @@ fi
 curl --version >/dev/null 2>&1 || ( echo "... ERROR: This script requires 'curl' to be present."; exit 1 )
 
 # Check for tr
-tr --help >/dev/null 2>&1 || ( echo "... ERROR: This script requires 'tr' to be present."; exit 1 )
+echo | tr -d "" >/dev/null 2>&1 || ( echo "... ERROR: This script requires 'tr' to be present."; exit 1 )
 
 ##### SETUP OUR LARGE VARS FOR SPLIT PROCESSING (due to limitations in split on Darwin/BSD)
-AZ2=`echo {a..z}{a..z}`
-AZ3=`echo {a..z}{a..z}{a..z}`
-
+AZ2="`echo {a..z}{a..z}`"
+AZ3="`echo {a..z}{a..z}{a..z}`"
 
 ### If user selected BACKUP, run the following code:
 if [ $backup = true ]&&[ $restore = false ]; then
