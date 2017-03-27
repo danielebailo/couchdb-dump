@@ -750,5 +750,6 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             A=1
             rm -f ${file_name_orig}-design
             rm -f ${file_name_orig}-nodesign
-     done
+        done
+    fi
 fi
