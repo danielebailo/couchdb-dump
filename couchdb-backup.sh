@@ -22,7 +22,7 @@
 
 
 ###################### CODE STARTS HERE ###################
-scriptversionnumber="1.1.5"
+scriptversionnumber="1.1.7"
 
 ##START: FUNCTIONS
 usage(){
@@ -184,14 +184,16 @@ file_name_orig=$file_name
 os_type=`uname -s`
 
 # Pick sed or gsed
-if [ "$os_type" = "FreeBSD" ]; then
+if [ "$os_type" = "FreeBSD" ]||[ "$os_type" = "Darwin" ]; then
     sed_cmd="gsed";
 else
     sed_cmd="sed";
 fi
 ## Make sure it's installed
-if ! which "$sed_cmd" > /dev/null 2>&1; then
-    echo "... ERROR: please install $sed_cmd and ensure it is in your path"
+echo | $sed_cmd 's/a//' >/dev/null 2>&1 
+if [ ! $? = 0 ]; then
+    echo "... ERROR: please install $sed_cmd (gnu-sed) and ensure it is in your path"
+    exit 1
 fi
 
 # Validate thread count
@@ -276,7 +278,11 @@ fi
 curl --version >/dev/null 2>&1 || ( echo "... ERROR: This script requires 'curl' to be present."; exit 1 )
 
 # Check for tr
-tr --help >/dev/null 2>&1 || ( echo "... ERROR: This script requires 'tr' to be present."; exit 1 )
+echo | tr -d "" >/dev/null 2>&1 || ( echo "... ERROR: This script requires 'tr' to be present."; exit 1 )
+
+##### SETUP OUR LARGE VARS FOR SPLIT PROCESSING (due to limitations in split on Darwin/BSD)
+AZ2="`echo {a..z}{a..z}`"
+AZ3="`echo {a..z}{a..z}{a..z}`"
 
 ### If user selected BACKUP, run the following code:
 if [ $backup = true ]&&[ $restore = false ]; then
@@ -362,24 +368,35 @@ if [ $backup = true ]&&[ $restore = false ]; then
         ### SPLIT INTO THREADS
         split_cal=$(( $((`wc -l ${file_name} | awk '{print$1}'` / $threads)) + $threads ))
         #split --numeric-suffixes --suffix-length=6 -l ${split_cal} ${file_name} ${file_name}.thread
-        split -d -a 6 -l ${split_cal} ${file_name} ${file_name}.thread
+        split -a 2 -l ${split_cal} ${file_name} ${file_name}.thread
         if [ ! "$?" = "0" ]; then
             echo "... ERROR: Unable to create split files."
             exit 1
         fi
 
-        NUM=0
-        for loop in `seq 1 ${threads}`; do
-            PADNUM=`printf "%06d" $NUM`
-            PADNAME="${file_name}.thread${PADNUM}"
+        # Capture if someone happens to breach the defined limits of AZ2 var. If this happens, we'll need to switch it out for AZ3 ...
+        if [[ $threads -gt 650 ]]; then
+            echo "Whoops- we hit a maximum limit here... \$AZ2 only allows for a maximum of 650 cores..."
+            exit 1
+        fi
+
+        count=0
+        for suffix in ${AZ2}; do
+            (( count++ ))
+            if [[ $count -gt $threads ]]; then
+                break
+            fi
+            PADNAME="${file_name}.thread${suffix}"
             $sed_cmd ${sed_edit_in_place} 's/.*,"doc"://g' ${PADNAME} &
-            (( NUM++ ))
         done
         wait
-        NUM=0
-        for loop in `seq 1 ${threads}`; do
-            PADNUM=`printf "%06d" $NUM`
-            PADNAME="${file_name}.thread${PADNUM}"
+        count=0
+        for suffix in ${AZ2}; do
+            (( count++ ))
+            if [[ $count -gt $threads ]]; then
+                break
+            fi
+            PADNAME="${file_name}.thread${suffix}"
             cat ${PADNAME} >> ${file_name}.tmp
             rm -f ${PADNAME} ${PADNAME}.sedtmp
             (( NUM++ ))
@@ -650,8 +667,16 @@ elif [ $restore = true ]&&[ $backup = false ]; then
     # Otherwise, it's a large import that requires bulk insertion.
     else
         $echoVerbose && echo "... INFO: Block import set to ${lines} lines."
-        if [ -f ${file_name}.split000000 ]; then
+        if [ -f ${file_name}.splitaaa ]; then
             echo "... ERROR: Split files \"${file_name}.split*\" already present. Please remove before continuing."
+            exit 1
+        fi
+        importlines=`cat ${file_name} | grep -c .`
+
+        # Due to the file limit imposed by the pre-calculated AZ3 variable, max split files is 15600 (alpha x 3positions)
+        if [[ `expr ${importlines} / ${lines}` -gt 15600 ]]; then
+            echo "... ERROR: Pre-processed split variable limit of 15600 files reached."
+            echo "           Please increase the '-l' parameter (Currently: $lines) and try again."
             exit 1
         fi
 
@@ -659,7 +684,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
         ### Split the file into many
-        split -d -a 6 -l ${lines} ${file_name} ${file_name}.split
+        split -a 3 -l ${lines} ${file_name} ${file_name}.split
         if [ ! "$?" = "0" ]; then
             echo "... ERROR: Unable to create split files."
             exit 1
@@ -667,69 +692,66 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         HEADER="`head -n 1 $file_name`"
         FOOTER="`tail -n 1 $file_name`"
 
-        A=0
-        NUM=0
-        until [ $A = 1 ];do
-            PADNUM=`printf "%06d" $NUM`
+        count=0
+        for PADNUM in $AZ3; do
             PADNAME="${file_name}.split${PADNUM}"
-            if [ -f ${PADNAME} ]; then
-                if [ ! "`head -n 1 ${PADNAME}`" = "${HEADER}" ]; then
-                    $echoVerbose && echo "... INFO: Adding header to ${PADNAME}"
-                    filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
-                    checkdiskspace "${PADNAME}" $filesize
-                    $sed_cmd ${sed_edit_in_place} "1i${HEADER}" ${PADNAME} && rm -f ${PADNAME}.sedtmp
-                else
-                    $echoVerbose && echo "... INFO: Header already applied to ${PADNAME}"
-                fi
-                if [ ! "`tail -n 1 ${PADNAME}`" = "${FOOTER}" ]; then
-                    $echoVerbose && echo "... INFO: Adding footer to ${PADNAME}"
-                    filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
-                    checkdiskspace "${PADNAME}" $filesize
-                    $sed_cmd ${sed_edit_in_place} '$s/,$//g' ${PADNAME} && rm -f ${PADNAME}.sedtmp
-                    echo "${FOOTER}" >> ${PADNAME}
-                else
-                    $echoVerbose && echo "... INFO: Footer already applied to ${PADNAME}"
-                fi
-                $echoVerbose && echo "... INFO: Inserting ${PADNAME}"
-                B=0
-                attemptcount=0
-                until [ $B = 1 ]; do
-                    (( attemptcount++ ))
-                    curl $curlSilentOpt $curlopt -T ${PADNAME} -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
-                    if [ ! $? = 0 ]; then
-                        if [ $attemptcount = $attempts ]; then
-                            echo "... ERROR: Curl failed trying to restore ${PADNAME} - Stopping"
-                            exit 1
-                        else
-                            echo "... WARN: Failed to import ${PADNAME} - Attempt ${attemptcount}/${attempts} - Retrying..."
-                            sleep 1
-                        fi
-                    elif [ ! "`head -n 1 tmp.out | grep -c 'error'`" = 0 ]; then
-                        if [ $attemptcount = $attempts ]; then
-                            echo "... ERROR: CouchDB Reported: `head -n 1 tmp.out`"
-                            exit 1
-                        else
-                            echo "... WARN: CouchDB Reported and error during import - Attempt ${attemptcount}/${attempts} - Retrying..."
-                            sleep 1
-                        fi
-                    else
-                        B=1
-                        rm -f ${PADNAME}
-                        rm -f tmp.out
-                    fi
-                done
-                (( NUM++ ))
-            else
-                $echoVerbose && echo "... INFO: Successfully Imported `expr ${NUM} - 1` Files"
-                A=1
-                rm -f ${file_name_orig}-design
-                rm -f ${file_name_orig}-nodesign
+            if [ ! -f ${PADNAME} ]; then
+                echo "... INFO: Import Cycle Completed."
+                break
             fi
+
+            if [ ! "`head -n 1 ${PADNAME}`" = "${HEADER}" ]; then
+                $echoVerbose && echo "... INFO: Adding header to ${PADNAME}"
+                filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
+                checkdiskspace "${PADNAME}" $filesize
+                $sed_cmd ${sed_edit_in_place} "1i${HEADER}" ${PADNAME} && rm -f ${PADNAME}.sedtmp
+            else
+                $echoVerbose && echo "... INFO: Header already applied to ${PADNAME}"
+            fi
+            if [ ! "`tail -n 1 ${PADNAME}`" = "${FOOTER}" ]; then
+                $echoVerbose && echo "... INFO: Adding footer to ${PADNAME}"
+                filesize=$(du -P -k ${PADNAME} | awk '{print$1}')
+                checkdiskspace "${PADNAME}" $filesize
+                $sed_cmd ${sed_edit_in_place} '$s/,$//g' ${PADNAME} && rm -f ${PADNAME}.sedtmp
+                echo "${FOOTER}" >> ${PADNAME}
+            else
+                $echoVerbose && echo "... INFO: Footer already applied to ${PADNAME}"
+            fi
+
+            $echoVerbose && echo "... INFO: Inserting ${PADNAME}"
+            A=0
+            attemptcount=0
+            until [ $A = 1 ]; do
+                (( attemptcount++ ))
+                curl $curlSilentOpt $curlopt -T ${PADNAME} -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
+                if [ ! $? = 0 ]; then
+                    if [ $attemptcount = $attempts ]; then
+                        echo "... ERROR: Curl failed trying to restore ${PADNAME} - Stopping"
+                        exit 1
+                    else
+                        echo "... WARN: Failed to import ${PADNAME} - Attempt ${attemptcount}/${attempts} - Retrying..."
+                        sleep 1
+                    fi
+                elif [ ! "`head -n 1 tmp.out | grep -c 'error'`" = 0 ]; then
+                    if [ $attemptcount = $attempts ]; then
+                        echo "... ERROR: CouchDB Reported: `head -n 1 tmp.out`"
+                        exit 1
+                    else
+                        echo "... WARN: CouchDB Reported and error during import - Attempt ${attemptcount}/${attempts} - Retrying..."
+                        sleep 1
+                    fi
+                else
+                    A=1
+                    rm -f ${PADNAME}
+                    rm -f tmp.out
+                    (( count++ ))
+                fi
+            done
+
+            $echoVerbose && echo "... INFO: Successfully Imported `expr ${count}` Files"
+            A=1
+            rm -f ${file_name_orig}-design
+            rm -f ${file_name_orig}-nodesign
         done
     fi
-
-# Capture if user managed to do something odd...
-else
-    echo "... ERROR: How did you get here??"
-    exit 1
 fi
