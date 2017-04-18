@@ -8,7 +8,7 @@ It works on LINUX/UNIX, Bash based systems (MacOSx)
  * Needs bash (plus curl, tr, file, split, awk, sed)
  * Dumped database is output to a file (configurable).
 
-##Quickstart (& quickend)
+## Quickstart (& quickend)
 * Backup:
 
 ```bash couchdb-backup.sh -b -H 127.0.0.1 -d my-db -f dumpedDB.json -u admin -p password```
