@@ -22,7 +22,7 @@
 
 
 ###################### CODE STARTS HERE ###################
-scriptversionnumber="1.1.7"
+scriptversionnumber="1.1.8"
 
 ##START: FUNCTIONS
 usage(){
@@ -387,7 +387,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
                 break
             fi
             PADNAME="${file_name}.thread${suffix}"
-            $sed_cmd ${sed_edit_in_place} 's/.*,"doc"://g' ${PADNAME} &
+            $sed_cmd ${sed_edit_in_place} 's/{"id".*,"doc"://g' ${PADNAME} &
         done
         wait
         count=0
@@ -418,7 +418,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         filesize=`expr $filesize - $KBreduction`
         checkdiskspace "${file_name}" $filesize
-        $sed_cmd ${sed_edit_in_place} 's/.*,"doc"://g' $file_name && rm -f ${file_name}.sedtmp
+        $sed_cmd ${sed_edit_in_place} 's/{"id".*,"doc"://g' $file_name && rm -f ${file_name}.sedtmp
         if [ ! $? = 0 ];then
             echo "Stage failed."
             exit 1
