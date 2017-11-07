@@ -31,23 +31,25 @@ Attachments in Database documents are only supported in CouchDB 1.6+
 ## Usage
 ```
 Usage: ./couchdb-backup.sh [-b|-r] -H <COUCHDB_HOST> -d <DB_NAME> -f <BACKUP_FILE> [-u <username>] [-p <password>] [-P <port>] [-l <lines>] [-t <threads>] [-a <import_attempts>]
-        -b   Run script in BACKUP mode.
-        -r   Run script in RESTORE mode.
-        -H   CouchDB Hostname or IP. Can be provided with or without 'http(s)://'
-        -d   CouchDB Database name to backup/restore.
-        -f   File to Backup-to/Restore-from.
-        -P   Provide a port number for CouchDB [Default: 5984]
-        -u   Provide a username for auth against CouchDB [Default: blank]
-        -p   Provide a password for auth against CouchDB [Default: blank]
-        -l   Number of lines (documents) to Restore at a time. [Default: 5000] (Restore Only)
-        -t   Number of CPU threads to use when parsing data [Default: nProcs-1] (Backup Only)
-        -a   Number of times to Attempt import before failing [Default: 3] (Restore Only)
-        -c   Create DB on demand, if they are not listed.
-        -z   Compress output file (Backup Only)
-        -T   Add datetime stamp to output file name (Backup Only)
-        -q   Run in quiet mode. Suppress output, except for errors and warnings.
-        -V   Display version information.
-        -h   Display usage information.
+	-b   Run script in BACKUP mode.
+	-r   Run script in RESTORE mode.
+	-H   CouchDB Hostname or IP. Can be provided with or without 'http(s)://'
+	-d   CouchDB Database name to backup/restore.
+	-f   File to Backup-to/Restore-from.
+	-P   Provide a port number for CouchDB [Default: 5984]
+	-u   Provide a username for auth against CouchDB [Default: blank]
+	       -- can also set with 'COUCHDB_USER' environment var
+	-p   Provide a password for auth against CouchDB [Default: blank]
+	       -- can also set with 'COUCHDB_PASS' environment var
+	-l   Number of lines (documents) to Restore at a time. [Default: 5000] (Restore Only)
+	-t   Number of CPU threads to use when parsing data [Default: nProcs-1] (Backup Only)
+	-a   Number of times to Attempt import before failing [Default: 3] (Restore Only)
+	-c   Create DB on demand, if they are not listed.
+	-q   Run in quiet mode. Suppress output, except for errors and warnings.
+	-z   Compress output file (Backup Only)
+	-T   Add datetime stamp to output file name (Backup Only)
+	-V   Display version information.
+	-h   Display usage information.
 
 Example: ./couchdb-backup.sh -b -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password
 ```

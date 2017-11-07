@@ -22,7 +22,7 @@
 
 
 ###################### CODE STARTS HERE ###################
-scriptversionnumber="1.1.8"
+scriptversionnumber="1.1.9"
 
 ##START: FUNCTIONS
 usage(){
@@ -35,7 +35,9 @@ usage(){
     echo -e "\t-f   File to Backup-to/Restore-from."
     echo -e "\t-P   Provide a port number for CouchDB [Default: 5984]"
     echo -e "\t-u   Provide a username for auth against CouchDB [Default: blank]"
+    echo -e "\t       -- can also set with 'COUCHDB_USER' environment var"
     echo -e "\t-p   Provide a password for auth against CouchDB [Default: blank]"
+    echo -e "\t       -- can also set with 'COUCHDB_PASS' environment var"
     echo -e "\t-l   Number of lines (documents) to Restore at a time. [Default: 5000] (Restore Only)"
     echo -e "\t-t   Number of CPU threads to use when parsing data [Default: nProcs-1] (Backup Only)"
     echo -e "\t-a   Number of times to Attempt import before failing [Default: 3] (Restore Only)"
@@ -243,6 +245,14 @@ if [ ! "`echo $url | egrep -c ":[0-9]*$"`" = "1" ]; then
     # add it.
     url="$url:$port"
 fi	
+
+# Check for empty user/pass and try reading in from Envvars
+if [ "x$username" = "x" ]; then
+    username="$COUCHDB_USER"
+fi
+if [ "x$password" = "x" ]; then
+    password="$COUCHDB_PASS"
+fi
 
 ## Manage the addition of user+pass if needed:
 # Ensure, if one is set, both are set.
