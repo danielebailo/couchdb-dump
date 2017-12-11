@@ -486,11 +486,23 @@ elif [ $restore = true ]&&[ $backup = false ]; then
     #### VALIDATION END
 
     $echoVerbose && echo "... INFO: Checking for database"
-    existing_dbs=$(curl $curlSilentOpt $curlopt -X GET "${url}/_all_dbs")
-    if [ ! $? = 0 ]; then
-        echo "... ERROR: Curl failed to get the list of databases - Stopping"
-        exit 1
-    fi
+    attemptcount=0
+    A=0
+    until [ $A = 1 ]; do
+        (( attemptcount++ ))
+        existing_dbs=$(curl $curlSilentOpt $curlopt -X GET "${url}/_all_dbs")
+        if [ ! $? = 0 ]; then
+            if [ $attemptcount = $attempts ]; then
+                echo "... ERROR: Curl failed to get the list of databases - Stopping"
+                exit 1
+            else
+                echo "... WARN: Curl failed to get the list of databases - Attempt ${attemptcount}/${attempts}. Retrying..."
+                sleep 1
+            fi
+        else
+            A=1
+        fi
+    done
     if [[ ! "$existing_dbs" = "["*"]" ]]; then
         echo "... WARN: Curl failed to get the list of databases - Continuing"
         if [ "x$existing_dbs" = "x" ]; then
