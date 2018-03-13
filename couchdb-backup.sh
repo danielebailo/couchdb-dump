@@ -471,6 +471,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     fi
 
     $echoVerbose && echo "... INFO: Export completed successfully. File available at: ${file_name}"
+    exit 0
 
 ### Else if user selected Restore:
 elif [ $restore = true ]&&[ $backup = false ]; then
