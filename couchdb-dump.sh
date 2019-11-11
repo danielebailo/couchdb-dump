@@ -16,9 +16,9 @@
 
 ## USAGE
 ## * To Backup:
-## ** example: ./couchdb-backup.sh -b -H 127.0.0.1 -d mydb -u admin -p password -f mydb.json
+## ** example: ./couchdb-dump.sh -b -H 127.0.0.1 -d mydb -u admin -p password -f mydb.json
 ## * To Restore:
-## ** example: ./couchdb-backup.sh -r -H 127.0.0.1 -d mydb -u admin -p password -f mydb.json
+## ** example: ./couchdb-dump.sh -r -H 127.0.0.1 -d mydb -u admin -p password -f mydb.json
 
 
 ###################### CODE STARTS HERE ###################

@@ -11,11 +11,11 @@ It works on LINUX/UNIX, Bash based systems (MacOSx)
 ## Quickstart (& quickend)
 * Backup:
 
-```bash couchdb-backup.sh -b -H 127.0.0.1 -d my-db -f dumpedDB.json -u admin -p password```
+```bash couchdb-dump.sh -b -H 127.0.0.1 -d my-db -f dumpedDB.json -u admin -p password```
 
 * Restore:
 
-```bash couchdb-backup.sh -r -H 127.0.0.1 -d my-db -f dumpedDB.json -u admin -p password```
+```bash couchdb-dump.sh -r -H 127.0.0.1 -d my-db -f dumpedDB.json -u admin -p password```
 
 ## Why do you need it?
 Surprisingly, there is not a straightforward way to dump a CouchDB database. Often you are suggested to replicate it or to dump it with the couchdb `_all_docs` directive. 
@@ -30,7 +30,7 @@ Attachments in Database documents are only supported in CouchDB 1.6+
 
 ## Usage
 ```
-Usage: ./couchdb-backup.sh [-b|-r] -H <COUCHDB_HOST> -d <DB_NAME> -f <BACKUP_FILE> [-u <username>] [-p <password>] [-P <port>] [-l <lines>] [-t <threads>] [-a <import_attempts>]
+Usage: ./couchdb-dump.sh [-b|-r] -H <COUCHDB_HOST> -d <DB_NAME> -f <BACKUP_FILE> [-u <username>] [-p <password>] [-P <port>] [-l <lines>] [-t <threads>] [-a <import_attempts>]
 	-b   Run script in BACKUP mode.
 	-r   Run script in RESTORE mode.
 	-H   CouchDB Hostname or IP. Can be provided with or without 'http(s)://'
@@ -51,7 +51,7 @@ Usage: ./couchdb-backup.sh [-b|-r] -H <COUCHDB_HOST> -d <DB_NAME> -f <BACKUP_FIL
 	-V   Display version information.
 	-h   Display usage information.
 
-Example: ./couchdb-backup.sh -b -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password
+Example: ./couchdb-dump.sh -b -H 127.0.0.1 -d mydb -f dumpedDB.json -u admin -p password
 ```
 
 ### Bonus 1! Full Database Compaction
