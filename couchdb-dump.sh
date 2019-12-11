@@ -533,7 +533,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                         sleep 1
                     fi
                 # If curl was happy, but CouchDB returned an error in the return JSON:
-                elif [ ! "`head -n 1 tmp.out | grep -c 'error'`" = 0 ]; then
+                elif [ ! "`head -n 1 tmp.out | grep -c '^{"error":'`" = 0 ]; then
                     if [ $attemptcount = $attempts ]; then
                         echo "... ERROR: CouchDB Reported: `head -n 1 tmp.out`"
                         exit 1
@@ -633,7 +633,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                          sleep 1
                      fi
                 # If curl was happy, but CouchDB returned an error in the return JSON:
-                elif [ ! "`head -n 1 ${design_file_name}.out.${designcount} | grep -c 'error'`" = 0 ]; then
+                elif [ ! "`head -n 1 ${design_file_name}.out.${designcount} | grep -c '^{"error":'`" = 0 ]; then
                      if [ $attemptcount = $attempts ]; then
                          echo "... ERROR: CouchDB Reported: `head -n 1 ${design_file_name}.out.${designcount}`"
                          exit 1
@@ -664,7 +664,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         until [ $A = 1 ]; do
             (( attemptcount++ ))
             curl $curlSilentOpt $curlopt -T $file_name -X POST "$url/$db_name/_bulk_docs" -H 'Content-Type: application/json' -o tmp.out
-            if [ "`head -n 1 tmp.out | grep -c 'error'`" -eq 0 ]; then
+            if [ "`head -n 1 tmp.out | grep -c '^{"error":'`" -eq 0 ]; then
                 $echoVerbose && echo "... INFO: Imported ${file_name_orig} Successfully."
                 rm -f tmp.out
                 rm -f ${file_name_orig}-design
@@ -755,7 +755,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                         echo "... WARN: Failed to import ${PADNAME} - Attempt ${attemptcount}/${attempts} - Retrying..."
                         sleep 1
                     fi
-                elif [ ! "`head -n 1 tmp.out | grep -c 'error'`" = 0 ]; then
+                elif [ ! "`head -n 1 tmp.out | grep -c '^{"error":'`" = 0 ]; then
                     if [ $attemptcount = $attempts ]; then
                         echo "... ERROR: CouchDB Reported: `head -n 1 tmp.out`"
                         exit 1
