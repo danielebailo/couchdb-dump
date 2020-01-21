@@ -22,7 +22,7 @@
 
 
 ###################### CODE STARTS HERE ###################
-scriptversionnumber="1.1.9"
+scriptversionnumber="1.1.10"
 
 ##START: FUNCTIONS
 usage(){
@@ -337,7 +337,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
 
     # CouchDB has a tendancy to output Windows carridge returns in it's output -
     # This messes up us trying to sed things at the end of lines!
-    if [ "`file $file_name 2>/dev/null | grep -c CRLF`" = "1" ]||[ ! "`file --help >/dev/null 2>&1; echo $?`" = "0" ]; then
+    if grep -qU $'\x0d' $file_name; then
         $echoVerbose && echo "... INFO: File may contain Windows carridge returns- converting..."
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
@@ -598,7 +598,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             # Scrap the ID and Rev from the main data, as well as any trailing ','
             echo "${line}" | $sed_cmd -${sed_regexp_option}e "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | $sed_cmd -e 's/,$//' > ${design_file_name}.${designcount}
             # Fix Windows CRLF
-            if [ "`file ${design_file_name}.${designcount} | grep -c CRLF`" = "1" ]; then
+            if grep -qU $'\x0d' ${design_file_name}.${designcount}; then
                 $echoVerbose && echo "... INFO: File contains Windows carridge returns- converting..."
                 filesize=$(du -P -k ${design_file_name}.${designcount} | awk '{print$1}')
                 checkdiskspace "${file_name}" $filesize
