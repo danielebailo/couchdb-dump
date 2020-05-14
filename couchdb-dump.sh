@@ -548,7 +548,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
                 fi
             done
         else
-            echo "... ERROR: corresponding datababase ${db_name} not yet created - Stopping"
+            echo "... ERROR: corresponding database ${db_name} not yet created - Stopping"
             $echoVerbose && echo "... HINT: you could add the -c flag to create the database automatically"
             exit 1
         fi
