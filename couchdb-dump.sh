@@ -335,10 +335,10 @@ if [ $backup = true ]&&[ $restore = false ]; then
         exit 1
     fi
 
-    # CouchDB has a tendancy to output Windows carridge returns in it's output -
+    # CouchDB has a tendancy to output Windows carriage returns in it's output -
     # This messes up us trying to sed things at the end of lines!
     if grep -qU $'\x0d' $file_name; then
-        $echoVerbose && echo "... INFO: File may contain Windows carridge returns- converting..."
+        $echoVerbose && echo "... INFO: File may contain Windows carriage returns- converting..."
         filesize=$(du -P -k ${file_name} | awk '{print$1}')
         checkdiskspace "${file_name}" $filesize
         tr -d '\r' < ${file_name} > ${file_name}.tmp
@@ -599,7 +599,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
             echo "${line}" | $sed_cmd -${sed_regexp_option}e "s@^\{\"_id\":\"${URLPATH}\",\"_rev\":\"[0-9]*-[0-9a-zA-Z_\-]*\",@\{@" | $sed_cmd -e 's/,$//' > ${design_file_name}.${designcount}
             # Fix Windows CRLF
             if grep -qU $'\x0d' ${design_file_name}.${designcount}; then
-                $echoVerbose && echo "... INFO: File contains Windows carridge returns- converting..."
+                $echoVerbose && echo "... INFO: File contains Windows carriage returns- converting..."
                 filesize=$(du -P -k ${design_file_name}.${designcount} | awk '{print$1}')
                 checkdiskspace "${file_name}" $filesize
                 tr -d '\r' < ${design_file_name}.${designcount} > ${design_file_name}.${designcount}.tmp
