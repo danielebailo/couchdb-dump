@@ -94,6 +94,18 @@ checkdiskspace(){
         exit 1
     fi
 }
+
+urlencode() {
+  local i c L=${#1}
+  for (( i=0; i<L; i++ )); do # loop characters, not bytes
+    c="${1:i:1}"
+    if [[ "$c" == [a-zA-Z0-9.~_-] ]]; then echo -n "$c"
+    else echo -n "$c" | hexdump -v -e '/1 "%02x"' | sed 's/\(..\)/%\1/g' # encode multiple bytes
+    fi
+  done
+  echo
+}
+
 ## END FUNCTIONS
 
 # Catch no args:
@@ -192,7 +204,7 @@ else
     sed_cmd="sed";
 fi
 ## Make sure it's installed
-echo | $sed_cmd 's/a//' >/dev/null 2>&1 
+echo | $sed_cmd 's/a//' >/dev/null 2>&1
 if [ ! $? = 0 ]; then
     echo "... ERROR: please install $sed_cmd (gnu-sed) and ensure it is in your path"
     exit 1
@@ -244,7 +256,7 @@ fi
 if [ ! "`echo $url | egrep -c ":[0-9]*$"`" = "1" ]; then
     # add it.
     url="$url:$port"
-fi	
+fi
 
 # Check for empty user/pass and try reading in from Envvars
 if [ "x$username" = "x" ]; then
@@ -321,7 +333,8 @@ if [ $backup = true ]&&[ $restore = false ]; then
     fi
 
     # Grab our data from couchdb
-    curl ${curlSilentOpt} ${curlopt} -X GET "$url/$db_name/_all_docs?include_docs=true&attachments=true" -o ${file_name}
+    url_encoded_db_name=$(urlencode "$db_name")
+    curl ${curlSilentOpt} ${curlopt} -X GET "$url/$url_encoded_db_name/_all_docs?include_docs=true&attachments=true" -o ${file_name}
     # Check for curl errors
     if [ ! $? = 0 ]; then
         echo "... ERROR: Curl encountered an issue whilst dumping the database."
@@ -565,7 +578,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
     # Count the design file (if it even exists)
     DESIGNS="`wc -l ${design_file_name} 2>/dev/null | awk '{print$1}'`"
     # If there's no design docs for import...
-    if [ "x$DESIGNS" = "x" ]||[ "$DESIGNS" = "0" ]; then 
+    if [ "x$DESIGNS" = "x" ]||[ "$DESIGNS" = "0" ]; then
         # Cleanup any null files
         rm -f ${design_file_name} 2>/dev/null
         $echoVerbose && echo "... INFO: No Design Documents found for import."
