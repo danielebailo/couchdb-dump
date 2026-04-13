@@ -730,7 +730,7 @@ elif [ $restore = true ]&&[ $backup = false ]; then
         checkdiskspace "${file_name}" $filesize
         ### Split the file into many
         
-        ${split_command_path} -l ${lines} ${file_name} ${file_name}.split
+        ${split_command_path} -a 3 -l ${lines} ${file_name} ${file_name}.split
         # using perl split above instead of this, which sometimes breaks lines across files
         # split -a 3 -l ${lines} ${file_name} ${file_name}.split
         if [ ! "$?" = "0" ]; then
