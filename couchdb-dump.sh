@@ -493,6 +493,7 @@ if [ $backup = true ]&&[ $restore = false ]; then
     fi
 
     $echoVerbose && echo "... INFO: Export completed successfully. File available at: ${file_name}"
+    sync
     exit 0
 
 ### Else if user selected Restore:
